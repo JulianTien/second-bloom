@@ -1,0 +1,26 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Base.Theme.Loop" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/loop_primary</item>
+        <item name="colorPrimaryContainer">@color/loop_primary_container</item>
+        <item name="colorOnPrimary">@color/loop_on_primary</item>
+        <item name="colorOnPrimaryContainer">@color/loop_on_primary_container</item>
+        <item name="colorSecondary">@color/loop_secondary</item>
+        <item name="colorSecondaryContainer">@color/loop_secondary_container</item>
+        <item name="colorOnSecondary">@color/loop_on_secondary</item>
+        <item name="colorOnSecondaryContainer">@color/loop_on_secondary_container</item>
+        <item name="android:colorBackground">@color/loop_background</item>
+        <item name="colorOnBackground">@color/loop_on_background</item>
+        <item name="colorSurface">@color/loop_surface</item>
+        <item name="colorOnSurface">@color/loop_on_surface</item>
+        <item name="colorSurfaceVariant">@color/loop_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/loop_on_surface_variant</item>
+        <item name="colorError">@color/loop_error</item>
+        <item name="colorErrorContainer">@color/loop_error_container</item>
+        <item name="colorOnError">@color/loop_on_error</item>
+        <item name="colorOnErrorContainer">@color/loop_on_error_container</item>
+        <item name="colorOutline">@color/loop_outline</item>
+        <item name="colorOutlineVariant">@color/loop_outline_variant</item>
+    </style>
+
+    <style name="Theme.Loop" parent="Base.Theme.Loop" />
+</resources>

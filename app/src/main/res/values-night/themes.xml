@@ -1,0 +1,24 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Base.Theme.Loop" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/loop_primary_dark</item>
+        <item name="colorPrimaryContainer">@color/loop_primary_container_dark</item>
+        <item name="colorOnPrimary">@color/loop_on_primary_dark</item>
+        <item name="colorOnPrimaryContainer">@color/loop_on_primary_container_dark</item>
+        <item name="colorSecondary">@color/loop_secondary_dark</item>
+        <item name="colorSecondaryContainer">@color/loop_secondary_container_dark</item>
+        <item name="colorOnSecondary">@color/loop_on_secondary_dark</item>
+        <item name="colorOnSecondaryContainer">@color/loop_on_secondary_container_dark</item>
+        <item name="android:colorBackground">@color/loop_background_dark</item>
+        <item name="colorOnBackground">@color/loop_on_background_dark</item>
+        <item name="colorSurface">@color/loop_surface_dark</item>
+        <item name="colorOnSurface">@color/loop_on_surface_dark</item>
+        <item name="colorSurfaceVariant">@color/loop_surface_variant_dark</item>
+        <item name="colorOnSurfaceVariant">@color/loop_on_surface_variant_dark</item>
+        <item name="colorError">@color/loop_error_dark</item>
+        <item name="colorErrorContainer">@color/loop_error_container_dark</item>
+        <item name="colorOnError">@color/loop_on_error_dark</item>
+        <item name="colorOnErrorContainer">@color/loop_on_error_container_dark</item>
+        <item name="colorOutline">@color/loop_outline_dark</item>
+        <item name="colorOutlineVariant">@color/loop_outline_variant_dark</item>
+    </style>
+</resources>
