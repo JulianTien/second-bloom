@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Loop"
+rootProject.name = "Second Bloom"
 include(":app")

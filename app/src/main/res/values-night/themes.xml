@@ -1,24 +1,24 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Base.Theme.Loop" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="colorPrimary">@color/loop_primary_dark</item>
-        <item name="colorPrimaryContainer">@color/loop_primary_container_dark</item>
-        <item name="colorOnPrimary">@color/loop_on_primary_dark</item>
-        <item name="colorOnPrimaryContainer">@color/loop_on_primary_container_dark</item>
-        <item name="colorSecondary">@color/loop_secondary_dark</item>
-        <item name="colorSecondaryContainer">@color/loop_secondary_container_dark</item>
-        <item name="colorOnSecondary">@color/loop_on_secondary_dark</item>
-        <item name="colorOnSecondaryContainer">@color/loop_on_secondary_container_dark</item>
-        <item name="android:colorBackground">@color/loop_background_dark</item>
-        <item name="colorOnBackground">@color/loop_on_background_dark</item>
-        <item name="colorSurface">@color/loop_surface_dark</item>
-        <item name="colorOnSurface">@color/loop_on_surface_dark</item>
-        <item name="colorSurfaceVariant">@color/loop_surface_variant_dark</item>
-        <item name="colorOnSurfaceVariant">@color/loop_on_surface_variant_dark</item>
-        <item name="colorError">@color/loop_error_dark</item>
-        <item name="colorErrorContainer">@color/loop_error_container_dark</item>
-        <item name="colorOnError">@color/loop_on_error_dark</item>
-        <item name="colorOnErrorContainer">@color/loop_on_error_container_dark</item>
-        <item name="colorOutline">@color/loop_outline_dark</item>
-        <item name="colorOutlineVariant">@color/loop_outline_variant_dark</item>
+    <style name="Base.Theme.SecondBloom" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/second_bloom_primary_dark</item>
+        <item name="colorPrimaryContainer">@color/second_bloom_primary_container_dark</item>
+        <item name="colorOnPrimary">@color/second_bloom_on_primary_dark</item>
+        <item name="colorOnPrimaryContainer">@color/second_bloom_on_primary_container_dark</item>
+        <item name="colorSecondary">@color/second_bloom_secondary_dark</item>
+        <item name="colorSecondaryContainer">@color/second_bloom_secondary_container_dark</item>
+        <item name="colorOnSecondary">@color/second_bloom_on_secondary_dark</item>
+        <item name="colorOnSecondaryContainer">@color/second_bloom_on_secondary_container_dark</item>
+        <item name="android:colorBackground">@color/second_bloom_background_dark</item>
+        <item name="colorOnBackground">@color/second_bloom_on_background_dark</item>
+        <item name="colorSurface">@color/second_bloom_surface_dark</item>
+        <item name="colorOnSurface">@color/second_bloom_on_surface_dark</item>
+        <item name="colorSurfaceVariant">@color/second_bloom_surface_variant_dark</item>
+        <item name="colorOnSurfaceVariant">@color/second_bloom_on_surface_variant_dark</item>
+        <item name="colorError">@color/second_bloom_error_dark</item>
+        <item name="colorErrorContainer">@color/second_bloom_error_container_dark</item>
+        <item name="colorOnError">@color/second_bloom_on_error_dark</item>
+        <item name="colorOnErrorContainer">@color/second_bloom_on_error_container_dark</item>
+        <item name="colorOutline">@color/second_bloom_outline_dark</item>
+        <item name="colorOutlineVariant">@color/second_bloom_outline_variant_dark</item>
     </style>
 </resources>

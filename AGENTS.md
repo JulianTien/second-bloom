@@ -13,28 +13,28 @@
 - Keep the current architecture lightweight unless a task explicitly requires expansion.
 - The app currently contains:
   - Compose UI screens, navigation, and theme code
-  - Domain models in `app/src/main/java/com/scf/loop/domain/model`
-  - A presentation state holder in `app/src/main/java/com/scf/loop/presentation/remodel/RemodelViewModel.kt`
-  - A small repository layer in `app/src/main/java/com/scf/loop/data/repository`
-  - A mock remote API and a real HTTP API scaffold in `app/src/main/java/com/scf/loop/data/remote`
-  - File-based local persistence for saved analysis and plan history in `app/src/main/java/com/scf/loop/data/local`
+  - Domain models in `app/src/main/java/com/scf/secondbloom/domain/model`
+  - A presentation state holder in `app/src/main/java/com/scf/secondbloom/presentation/remodel/RemodelViewModel.kt`
+  - A small repository layer in `app/src/main/java/com/scf/secondbloom/data/repository`
+  - A mock remote API and a real HTTP API scaffold in `app/src/main/java/com/scf/secondbloom/data/remote`
+  - File-based local persistence for saved analysis and plan history in `app/src/main/java/com/scf/secondbloom/data/local`
 - There is still no dependency injection container, no background service, no multi-module split, and no production backend implementation checked into this repository.
 - Do not introduce new modules, heavy frameworks, Room, Retrofit, or complex architectural abstractions without a clear requirement.
 - Prefer incremental changes that fit the existing single-module Compose structure.
 
 ## Project Structure
 
-- `app/src/main/java/com/scf/loop`
+- `app/src/main/java/com/scf/secondbloom`
   Application entry package.
-- `app/src/main/java/com/scf/loop/data`
+- `app/src/main/java/com/scf/secondbloom/data`
   Lightweight data layer for local persistence, remote APIs, and repositories.
-- `app/src/main/java/com/scf/loop/domain/model`
+- `app/src/main/java/com/scf/secondbloom/domain/model`
   Domain models used across UI, repository, and persistence code.
-- `app/src/main/java/com/scf/loop/presentation/remodel`
+- `app/src/main/java/com/scf/secondbloom/presentation/remodel`
   Main workflow state and business actions exposed to the UI.
-- `app/src/main/java/com/scf/loop/ui`
+- `app/src/main/java/com/scf/secondbloom/ui`
   Compose UI, screens, shared UI components, and theme code.
-- `app/src/main/java/com/scf/loop/navigation`
+- `app/src/main/java/com/scf/secondbloom/navigation`
   Navigation routes and navigation-related definitions.
 - `docs/api`
   In-repository backend contract documentation. The current MVP contract lives here.
@@ -64,6 +64,9 @@ Known command caveat:
 ## API Docs
 
 - Current status: a lightweight backend contract document is present at `docs/api/mvp-contract.md`.
+- A system-level backend design document now also lives at `docs/api/backend-architecture.md`.
+- A delivery-focused backend plan and SQL draft now also live at `docs/api/backend-delivery-plan.md` and `docs/api/postgres-schema-draft.sql`.
+- A first runnable backend implementation now exists outside this repository at `/Users/peng/AndroidStudioProjects/second-bloom-backend`.
 - The app defaults to `MockRemodelApi`, but can switch to `RealRemodelApi` through `BuildConfig` flags defined in `app/build.gradle.kts`.
 - Do not invent or imply external API contracts that do not exist in code or docs.
 - `docs/api/` is the canonical location for API documentation in this repository.
@@ -77,7 +80,7 @@ Known command caveat:
 - The current tests are no longer just template examples. They cover important screen states and `RemodelViewModel` behavior, but they are still not full end-to-end coverage.
 - When adding meaningful product behavior, prefer adding or updating real screen, navigation, or interaction tests rather than expanding template-only tests.
 - Local history is currently stored as a JSON snapshot in app-private storage, not in a database. Preserve that lightweight approach unless there is a clear reason to migrate.
-- Real backend support is scaffolded, not complete. If you change request or response shapes, keep `docs/api/mvp-contract.md`, remote DTOs, and `RealRemodelApi` aligned in the same change.
+- Real backend support is scaffolded, not complete. If you change request or response shapes, keep `docs/api/mvp-contract.md`, `docs/api/backend-architecture.md`, `docs/api/backend-delivery-plan.md`, `docs/api/postgres-schema-draft.sql`, remote DTOs, and `RealRemodelApi` aligned in the same change.
 - After every meaningful planning or development task, update `PLANS.md` so the ExecPlan progress, discoveries, decisions, and current next steps remain aligned with the actual repository state.
 - When planning or implementing work, decompose the task as much as reasonably possible and prefer delegating clearly bounded, non-overlapping subtasks to subagents in parallel when that can accelerate delivery without creating merge conflicts.
 - Keep documentation aligned with the actual repository state. If architecture or tooling changes, update this file with the new source of truth.

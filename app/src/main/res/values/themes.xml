@@ -1,26 +1,26 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Base.Theme.Loop" parent="Theme.Material3.Light.NoActionBar">
-        <item name="colorPrimary">@color/loop_primary</item>
-        <item name="colorPrimaryContainer">@color/loop_primary_container</item>
-        <item name="colorOnPrimary">@color/loop_on_primary</item>
-        <item name="colorOnPrimaryContainer">@color/loop_on_primary_container</item>
-        <item name="colorSecondary">@color/loop_secondary</item>
-        <item name="colorSecondaryContainer">@color/loop_secondary_container</item>
-        <item name="colorOnSecondary">@color/loop_on_secondary</item>
-        <item name="colorOnSecondaryContainer">@color/loop_on_secondary_container</item>
-        <item name="android:colorBackground">@color/loop_background</item>
-        <item name="colorOnBackground">@color/loop_on_background</item>
-        <item name="colorSurface">@color/loop_surface</item>
-        <item name="colorOnSurface">@color/loop_on_surface</item>
-        <item name="colorSurfaceVariant">@color/loop_surface_variant</item>
-        <item name="colorOnSurfaceVariant">@color/loop_on_surface_variant</item>
-        <item name="colorError">@color/loop_error</item>
-        <item name="colorErrorContainer">@color/loop_error_container</item>
-        <item name="colorOnError">@color/loop_on_error</item>
-        <item name="colorOnErrorContainer">@color/loop_on_error_container</item>
-        <item name="colorOutline">@color/loop_outline</item>
-        <item name="colorOutlineVariant">@color/loop_outline_variant</item>
+    <style name="Base.Theme.SecondBloom" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/second_bloom_primary</item>
+        <item name="colorPrimaryContainer">@color/second_bloom_primary_container</item>
+        <item name="colorOnPrimary">@color/second_bloom_on_primary</item>
+        <item name="colorOnPrimaryContainer">@color/second_bloom_on_primary_container</item>
+        <item name="colorSecondary">@color/second_bloom_secondary</item>
+        <item name="colorSecondaryContainer">@color/second_bloom_secondary_container</item>
+        <item name="colorOnSecondary">@color/second_bloom_on_secondary</item>
+        <item name="colorOnSecondaryContainer">@color/second_bloom_on_secondary_container</item>
+        <item name="android:colorBackground">@color/second_bloom_background</item>
+        <item name="colorOnBackground">@color/second_bloom_on_background</item>
+        <item name="colorSurface">@color/second_bloom_surface</item>
+        <item name="colorOnSurface">@color/second_bloom_on_surface</item>
+        <item name="colorSurfaceVariant">@color/second_bloom_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/second_bloom_on_surface_variant</item>
+        <item name="colorError">@color/second_bloom_error</item>
+        <item name="colorErrorContainer">@color/second_bloom_error_container</item>
+        <item name="colorOnError">@color/second_bloom_on_error</item>
+        <item name="colorOnErrorContainer">@color/second_bloom_on_error_container</item>
+        <item name="colorOutline">@color/second_bloom_outline</item>
+        <item name="colorOutlineVariant">@color/second_bloom_outline_variant</item>
     </style>
 
-    <style name="Theme.Loop" parent="Base.Theme.Loop" />
+    <style name="Theme.SecondBloom" parent="Base.Theme.SecondBloom" />
 </resources>
