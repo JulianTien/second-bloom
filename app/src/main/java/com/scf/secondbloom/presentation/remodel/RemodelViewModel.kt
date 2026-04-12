@@ -63,12 +63,13 @@ import kotlinx.coroutines.Job
 
 private const val LowConfidenceThreshold = 0.75f
 private const val PreviewPollDelayMillis = 900L
-private const val PreviewMaxPollAttempts = 6
+private const val PreviewMaxPollAttempts = 12
 private val ActivePreviewStatuses = setOf(PreviewJobStatus.QUEUED, PreviewJobStatus.RUNNING)
 private val ActivePreviewRenderStatuses = setOf(PreviewRenderStatus.QUEUED, PreviewRenderStatus.RUNNING)
 
 class RemodelViewModel(
     private val repository: RemodelRepository,
+    private val demoRepository: RemodelRepository = DefaultRemodelRepository(MockRemodelApi()),
     private val historyRepository: RemodelHistoryRepository = NoOpRemodelHistoryRepository,
     private val historySyncRepositoryFactory: ((String) -> HistorySyncRepository)? = null,
     private val authUserIdFlow: Flow<String?> = if (SecondBloomClerkConfig.isConfigured) {
@@ -136,6 +137,9 @@ class RemodelViewModel(
         onImageSelected(scenario.toSelectedImage())
     }
 
+    private fun activeRepository(state: RemodelUiState = _uiState.value): RemodelRepository =
+        if (state.selectedDemoScenario != null) demoRepository else repository
+
     fun analyzeSelectedImage() {
         val image = _uiState.value.selectedImage
         if (image == null) {
@@ -155,6 +159,7 @@ class RemodelViewModel(
         }
 
         viewModelScope.launch {
+            val activeRepository = activeRepository()
             _uiState.update {
                 it.copy(
                     stage = RemodelStage.Analyzing,
@@ -164,7 +169,7 @@ class RemodelViewModel(
             }
 
             try {
-                val analysis = repository.analyze(image, _uiState.value.appLanguage)
+                val analysis = activeRepository.analyze(image, _uiState.value.appLanguage)
                 historyRepository.saveAnalysis(image, analysis)
                 refreshHistory()
                 syncHistoryInBackground()
@@ -288,6 +293,7 @@ class RemodelViewModel(
         val sourceImage = _uiState.value.selectedImage ?: return
 
         viewModelScope.launch {
+            val activeRepository = activeRepository()
             _uiState.update {
                 it.copy(
                     stage = RemodelStage.GeneratingPlans,
@@ -297,7 +303,7 @@ class RemodelViewModel(
             }
 
             try {
-                val plans = repository.generatePlans(
+                val plans = activeRepository.generatePlans(
                     intent = intent,
                     confirmedAnalysis = analysis,
                     userPreferences = _uiState.value.userPreferences,
@@ -438,12 +444,16 @@ class RemodelViewModel(
     fun resumePreviewPolling(planId: String) {
         val state = _uiState.value
         val previewJob = state.previewJob ?: return
-        val preview = state.previewFor(planId) ?: return
         if (state.isPreviewLoading) {
             return
         }
+        val preview = state.previewFor(planId)
+        val isRequestedPlan = state.selectedPlanId == planId
+        val hasActiveJobForPlan = isRequestedPlan && previewJob.status in ActivePreviewStatuses
+        val hasActiveRenderForPlan = preview?.renderStatus in ActivePreviewRenderStatuses
         if (previewJob.status !in ActivePreviewStatuses &&
-            preview.renderStatus !in ActivePreviewRenderStatuses
+            !hasActiveRenderForPlan &&
+            !hasActiveJobForPlan
         ) {
             return
         }
@@ -616,7 +626,7 @@ class RemodelViewModel(
         }
 
         try {
-            val createResult = repository.createPreviewJob(
+            val createResult = activeRepository().createPreviewJob(
                 analysisId = analysis.analysisId,
                 planId = planId,
                 editOptions = editOptions
@@ -659,36 +669,58 @@ class RemodelViewModel(
 
     private suspend fun pollPreviewJob(previewJobId: String) {
         var reachedTerminalState = false
-        repeat(PreviewMaxPollAttempts) { attempt ->
-            if (attempt > 0) {
-                delay(PreviewPollDelayMillis)
+        try {
+            repeat(PreviewMaxPollAttempts) { attempt ->
+                if (attempt > 0) {
+                    delay(PreviewPollDelayMillis)
+                }
+                val previewJob = activeRepository().getPreviewJob(previewJobId)
+                val isTerminal = previewJob.status !in ActivePreviewStatuses
+                val filteredMessage = previewJob.results
+                    .firstOrNull { it.renderStatus == PreviewRenderStatus.FILTERED }
+                    ?.errorMessage
+                _uiState.update {
+                    it.copy(
+                        previewJob = previewJob,
+                        isPreviewLoading = !isTerminal,
+                        previewErrorMessage = when {
+                            previewJob.status == PreviewJobStatus.FAILED && filteredMessage != null ->
+                                filteredMessage
+                            previewJob.status == PreviewJobStatus.FAILED ->
+                                tr(it.appLanguage, "The plan is confirmed, but final image generation failed. Please try again shortly.", "方案已确认，但最终效果图生成失败，请稍后重试。")
+                            previewJob.status == PreviewJobStatus.EXPIRED ->
+                                tr(it.appLanguage, "The image job expired. Please generate it again.", "效果图任务已过期，请重新生成。")
+                            previewJob.status == PreviewJobStatus.COMPLETED_WITH_FAILURES ->
+                                filteredMessage ?: tr(it.appLanguage, "The final image did not pass validation, so it will not be shown this time.", "最终效果图未通过校验，本次不展示结果。")
+                            else -> null
+                        }
+                    )
+                }
+                if (isTerminal) {
+                    reachedTerminalState = true
+                    return
+                }
             }
-            val previewJob = repository.getPreviewJob(previewJobId)
-            val isTerminal = previewJob.status !in ActivePreviewStatuses
-            val filteredMessage = previewJob.results
-                .firstOrNull { it.renderStatus == PreviewRenderStatus.FILTERED }
-                ?.errorMessage
+        } catch (exception: IOException) {
             _uiState.update {
                 it.copy(
-                    previewJob = previewJob,
-                    isPreviewLoading = !isTerminal,
-                    previewErrorMessage = when {
-                        previewJob.status == PreviewJobStatus.FAILED && filteredMessage != null ->
-                            filteredMessage
-                        previewJob.status == PreviewJobStatus.FAILED ->
-                            tr(it.appLanguage, "The plan is confirmed, but final image generation failed. Please try again shortly.", "方案已确认，但最终效果图生成失败，请稍后重试。")
-                        previewJob.status == PreviewJobStatus.EXPIRED ->
-                            tr(it.appLanguage, "The image job expired. Please generate it again.", "效果图任务已过期，请重新生成。")
-                        previewJob.status == PreviewJobStatus.COMPLETED_WITH_FAILURES ->
-                            filteredMessage ?: tr(it.appLanguage, "The final image did not pass validation, so it will not be shown this time.", "最终效果图未通过校验，本次不展示结果。")
-                        else -> null
+                    isPreviewLoading = false,
+                    previewErrorMessage = exception.message.orEmpty().ifBlank {
+                        tr(it.appLanguage, "The final image status could not be refreshed. Please try again.", "当前无法刷新最终效果图状态，请稍后重试。")
                     }
                 )
             }
-            if (isTerminal) {
-                reachedTerminalState = true
-                return
+            return
+        } catch (exception: ModelResponseException) {
+            _uiState.update {
+                it.copy(
+                    isPreviewLoading = false,
+                    previewErrorMessage = exception.message.orEmpty().ifBlank {
+                        tr(it.appLanguage, "The server returned an invalid final image status. Please try again.", "服务端返回了异常的最终效果图状态，请稍后重试。")
+                    }
+                )
             }
+            return
         }
         if (!reachedTerminalState) {
             _uiState.update {
@@ -712,8 +744,9 @@ class RemodelViewModel(
 
         return try {
             val language = _uiState.value.appLanguage
-            val refreshedAnalysis = repository.analyze(selectedImage, language)
-            val refreshedPlans = repository.generatePlans(
+            val activeRepository = activeRepository(state)
+            val refreshedAnalysis = activeRepository.analyze(selectedImage, language)
+            val refreshedPlans = activeRepository.generatePlans(
                 intent = selectedIntent,
                 confirmedAnalysis = refreshedAnalysis,
                 userPreferences = currentPreferences,

@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.scf.secondbloom.domain.model.PlanPreviewResult
+import com.scf.secondbloom.domain.model.PreviewJobStatus
 import com.scf.secondbloom.domain.model.PreviewRenderStatus
 import com.scf.secondbloom.domain.model.RemodelPlan
 import com.scf.secondbloom.domain.model.RemodelUiState
@@ -63,10 +64,13 @@ fun PreviewResultScreen(
     val publishedRemodel = planId?.let(state::publishedRemodelFor)
     val isPublished = publishedRemodel != null
     val hasRenderableAssets = preview?.hasRenderableAssets() == true
+    val hasActiveJobForPlan = !planId.isNullOrBlank() &&
+        state.selectedPlanId == planId &&
+        state.previewJob?.status in setOf(PreviewJobStatus.QUEUED, PreviewJobStatus.RUNNING)
     val isPreviewPending = preview?.renderStatus in setOf(
         PreviewRenderStatus.QUEUED,
         PreviewRenderStatus.RUNNING
-    )
+    ) || hasActiveJobForPlan
 
     BackHandler(onBack = onBack)
 
@@ -145,6 +149,37 @@ fun PreviewResultScreen(
                         description = localized(language, "Image editing has started. Stay on this page to watch the result arrive.", "真图编辑已经启动，请留在此页等待结果返回。")
                     ) {
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                }
+                preview == null && hasActiveJobForPlan -> {
+                    PreviewResultCard(
+                        title = localized(language, "Still generating", "仍在生成中"),
+                        description = state.previewErrorMessage ?: localized(
+                            language,
+                            "The final image job is active and the result payload has not arrived yet. Stay here for updates or continue editing while it runs.",
+                            "最终效果图任务仍在进行中，结果数据还没返回。你可以留在这里等待更新，或先继续调整方案。"
+                        )
+                    ) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                }
+                preview == null && !state.previewErrorMessage.isNullOrBlank() -> {
+                    PreviewResultCard(
+                        title = localized(language, "Current image status", "当前效果图状态"),
+                        description = state.previewErrorMessage
+                    ) {
+                        Button(
+                            onClick = { onEditPlan(currentPlan.planId) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(localized(language, "Back to editor", "返回编辑后重试"))
+                        }
+                        TextButton(
+                            onClick = onDismissError,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(localized(language, "Dismiss", "关闭提示"))
+                        }
                     }
                 }
                 preview == null -> {

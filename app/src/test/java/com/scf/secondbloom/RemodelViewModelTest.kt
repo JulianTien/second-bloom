@@ -121,6 +121,150 @@ class RemodelViewModelTest {
     }
 
     @Test
+    fun analyzeSelectedImage_usesDemoRepository_forNormalDemoScenario() = runTest {
+        val primaryRepository = CountingRemodelRepository(
+            analyzeFailure = IllegalStateException("No content provider: demo://scenario/normal")
+        )
+        val demoRepository = CountingRemodelRepository(
+            delegate = DefaultRemodelRepository(MockRemodelApi())
+        )
+        val viewModel = RemodelViewModel(
+            repository = primaryRepository,
+            demoRepository = demoRepository
+        )
+
+        viewModel.loadDemoScenario(DemoScenario.NORMAL)
+        viewModel.analyzeSelectedImage()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(RemodelStage.AnalysisReady, state.stage)
+        assertEquals(DemoScenario.NORMAL, state.selectedDemoScenario)
+        assertEquals(0, primaryRepository.analyzeCalls)
+        assertEquals(1, demoRepository.analyzeCalls)
+    }
+
+    @Test
+    fun demoScenarioFlow_routesPlanAndPreviewLifecycle_toDemoRepository() = runTest {
+        val primaryRepository = CountingRemodelRepository(
+            analyzeFailure = IllegalStateException("Primary repository should not be used for demo scenarios."),
+            generatePlansFailure = IllegalStateException("Primary repository should not be used for demo scenarios."),
+            createPreviewFailure = IllegalStateException("Primary repository should not be used for demo scenarios."),
+            getPreviewFailure = IllegalStateException("Primary repository should not be used for demo scenarios.")
+        )
+        val demoRepository = CountingRemodelRepository(
+            delegate = DefaultRemodelRepository(MockRemodelApi())
+        )
+        val viewModel = RemodelViewModel(
+            repository = primaryRepository,
+            demoRepository = demoRepository
+        )
+
+        viewModel.loadDemoScenario(DemoScenario.NORMAL)
+        viewModel.analyzeSelectedImage()
+        advanceUntilIdle()
+        viewModel.selectIntent(RemodelIntent.DAILY)
+        viewModel.generatePlans()
+        advanceUntilIdle()
+
+        val selectedPlanId = viewModel.uiState.value.plans.first().planId
+        viewModel.confirmPlan(selectedPlanId)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(RemodelStage.PlansReady, state.stage)
+        assertEquals(0, primaryRepository.analyzeCalls)
+        assertEquals(0, primaryRepository.generatePlanCalls)
+        assertEquals(0, primaryRepository.createPreviewCalls)
+        assertEquals(0, primaryRepository.getPreviewCalls)
+        assertEquals(1, demoRepository.analyzeCalls)
+        assertEquals(1, demoRepository.generatePlanCalls)
+        assertEquals(1, demoRepository.createPreviewCalls)
+        assertTrue(demoRepository.getPreviewCalls > 0)
+        assertEquals(PreviewJobStatus.COMPLETED, state.previewJob?.status)
+        assertEquals(
+            PreviewRenderStatus.COMPLETED,
+            state.previewFor(selectedPlanId)?.renderStatus
+        )
+    }
+
+    @Test
+    fun analyzeSelectedImage_usesDemoRepository_forLowConfidenceDemoScenario() = runTest {
+        val primaryRepository = CountingRemodelRepository(
+            analyzeFailure = IllegalStateException("Primary repository should not be used for demo scenarios.")
+        )
+        val demoRepository = CountingRemodelRepository(
+            delegate = DefaultRemodelRepository(MockRemodelApi())
+        )
+        val viewModel = RemodelViewModel(
+            repository = primaryRepository,
+            demoRepository = demoRepository
+        )
+
+        viewModel.loadDemoScenario(DemoScenario.LOW_CONFIDENCE)
+        viewModel.analyzeSelectedImage()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(RemodelStage.LowConfidence, state.stage)
+        assertEquals(0, primaryRepository.analyzeCalls)
+        assertEquals(1, demoRepository.analyzeCalls)
+    }
+
+    @Test
+    fun analyzeSelectedImage_usesDemoRepository_forNetworkErrorDemoScenario() = runTest {
+        val primaryRepository = CountingRemodelRepository(
+            analyzeFailure = IllegalStateException("Primary repository should not be used for demo scenarios.")
+        )
+        val demoRepository = CountingRemodelRepository(
+            delegate = DefaultRemodelRepository(MockRemodelApi())
+        )
+        val viewModel = RemodelViewModel(
+            repository = primaryRepository,
+            demoRepository = demoRepository
+        )
+
+        viewModel.loadDemoScenario(DemoScenario.NETWORK_ERROR)
+        viewModel.analyzeSelectedImage()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(RemodelStage.NetworkError, state.stage)
+        assertEquals(0, primaryRepository.analyzeCalls)
+        assertEquals(1, demoRepository.analyzeCalls)
+    }
+
+    @Test
+    fun analyzeSelectedImage_usesPrimaryRepository_forRealImages() = runTest {
+        val primaryRepository = CountingRemodelRepository(
+            delegate = DefaultRemodelRepository(MockRemodelApi())
+        )
+        val demoRepository = CountingRemodelRepository(
+            analyzeFailure = IllegalStateException("Demo repository should not be used for real images.")
+        )
+        val viewModel = RemodelViewModel(
+            repository = primaryRepository,
+            demoRepository = demoRepository
+        )
+
+        viewModel.onImageSelected(
+            SelectedImage(
+                uri = "content://secondbloom/plain-shirt.jpg",
+                fileName = "plain-shirt.jpg",
+                mimeType = "image/jpeg",
+                sizeBytes = 180_000
+            )
+        )
+        viewModel.analyzeSelectedImage()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(RemodelStage.AnalysisReady, state.stage)
+        assertEquals(1, primaryRepository.analyzeCalls)
+        assertEquals(0, demoRepository.analyzeCalls)
+    }
+
+    @Test
     fun generatePlans_afterEditingAnalysis_usesLatestStateAndReturnsPlans() = runTest {
         val viewModel = RemodelViewModel(DefaultRemodelRepository(MockRemodelApi()))
 
@@ -736,7 +880,7 @@ private class PendingPreviewRepository : RemodelRepository {
 
     override suspend fun getPreviewJob(previewJobId: String): PreviewJobSnapshot {
         previewFetchCalls += 1
-        return if (previewFetchCalls <= 6) {
+        return if (previewFetchCalls <= 12) {
             PreviewJobSnapshot(
                 previewJobId = previewJobId,
                 analysisId = analysis.analysisId,
@@ -774,6 +918,63 @@ private class PendingPreviewRepository : RemodelRepository {
                 pollPath = "/remodel-preview-jobs/$previewJobId"
             )
         }
+    }
+}
+
+private class CountingRemodelRepository(
+    private val delegate: RemodelRepository? = null,
+    private val analyzeFailure: Exception? = null,
+    private val generatePlansFailure: Exception? = null,
+    private val createPreviewFailure: Exception? = null,
+    private val getPreviewFailure: Exception? = null
+) : RemodelRepository {
+    var analyzeCalls: Int = 0
+        private set
+    var generatePlanCalls: Int = 0
+        private set
+    var createPreviewCalls: Int = 0
+        private set
+    var getPreviewCalls: Int = 0
+        private set
+
+    override suspend fun analyze(
+        image: SelectedImage,
+        responseLanguage: AppLanguage
+    ): com.scf.secondbloom.domain.model.GarmentAnalysis {
+        analyzeCalls += 1
+        analyzeFailure?.let { throw it }
+        return requireNotNull(delegate) { "delegate is required when no failure is configured" }
+            .analyze(image, responseLanguage)
+    }
+
+    override suspend fun generatePlans(
+        intent: RemodelIntent,
+        confirmedAnalysis: com.scf.secondbloom.domain.model.GarmentAnalysis,
+        userPreferences: String,
+        responseLanguage: AppLanguage
+    ): List<RemodelPlan> {
+        generatePlanCalls += 1
+        generatePlansFailure?.let { throw it }
+        return requireNotNull(delegate) { "delegate is required when no failure is configured" }
+            .generatePlans(intent, confirmedAnalysis, userPreferences, responseLanguage)
+    }
+
+    override suspend fun createPreviewJob(
+        analysisId: String,
+        planId: String,
+        editOptions: PreviewEditOptions?
+    ): GeneratePreviewJobResult {
+        createPreviewCalls += 1
+        createPreviewFailure?.let { throw it }
+        return requireNotNull(delegate) { "delegate is required when no failure is configured" }
+            .createPreviewJob(analysisId, planId, editOptions)
+    }
+
+    override suspend fun getPreviewJob(previewJobId: String): PreviewJobSnapshot {
+        getPreviewCalls += 1
+        getPreviewFailure?.let { throw it }
+        return requireNotNull(delegate) { "delegate is required when no failure is configured" }
+            .getPreviewJob(previewJobId)
     }
 }
 

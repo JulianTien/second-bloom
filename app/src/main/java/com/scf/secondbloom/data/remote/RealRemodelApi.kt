@@ -10,6 +10,7 @@ import com.scf.secondbloom.data.remote.dto.RemodelPreviewJobDto
 import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
 import java.net.URL
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +37,14 @@ class RealRemodelApi(
         explicitNulls = false
     }
 ) : RemodelApi {
+
+    private enum class RequestTimeoutProfile(
+        val connectTimeoutMillis: Int,
+        val readTimeoutMillis: Int
+    ) {
+        DEFAULT(connectTimeoutMillis = 15_000, readTimeoutMillis = 30_000),
+        PREVIEW(connectTimeoutMillis = 20_000, readTimeoutMillis = 120_000)
+    }
 
     private enum class ErrorMappingMode {
         IMAGE_UPLOAD,
@@ -159,12 +168,18 @@ class RealRemodelApi(
         }
     }
 
-    private fun openConnection(endpoint: String): HttpURLConnection =
-        connectionFactory(baseUrl.trimEnd('/') + endpoint).apply {
-            connectTimeout = 15_000
-            readTimeout = 30_000
+    private fun openConnection(endpoint: String): HttpURLConnection {
+        val timeoutProfile = when {
+            endpoint == "/generate-remodel-preview-jobs" ||
+                endpoint.startsWith("/remodel-preview-jobs/") -> RequestTimeoutProfile.PREVIEW
+            else -> RequestTimeoutProfile.DEFAULT
+        }
+        return connectionFactory(baseUrl.trimEnd('/') + endpoint).apply {
+            connectTimeout = timeoutProfile.connectTimeoutMillis
+            readTimeout = timeoutProfile.readTimeoutMillis
             setRequestProperty("Accept", "application/json")
         }
+    }
 
     private inline fun HttpURLConnection.useAndRead(
         errorMappingMode: ErrorMappingMode,
@@ -196,6 +211,8 @@ class RealRemodelApi(
                 422 -> throw ModelResponseException(message)
                 else -> throw IOException(message)
             }
+        } catch (_: SocketTimeoutException) {
+            throw IOException("最终效果图服务响应较慢，请稍后重试。")
         } finally {
             disconnect()
         }

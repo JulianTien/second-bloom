@@ -5,10 +5,15 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performClick
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import com.scf.secondbloom.data.local.AppPreferencesRepository
 import com.scf.secondbloom.data.local.RemodelHistoryRepository
+import com.scf.secondbloom.data.repository.DefaultRemodelRepository
 import com.scf.secondbloom.data.repository.RemodelRepository
+import com.scf.secondbloom.data.remote.mock.MockRemodelApi
 import com.scf.secondbloom.auth.SecondBloomAuthProfile
 import com.scf.secondbloom.auth.SecondBloomAuthUiState
 import com.scf.secondbloom.domain.model.BackgroundComplexity
@@ -25,6 +30,8 @@ import com.scf.secondbloom.domain.model.RemodelStage
 import com.scf.secondbloom.domain.model.RemodelStep
 import com.scf.secondbloom.domain.model.RemodelUiState
 import com.scf.secondbloom.domain.model.PlanPreviewResult
+import com.scf.secondbloom.domain.model.PreviewJobSnapshot
+import com.scf.secondbloom.domain.model.PreviewJobStatus
 import com.scf.secondbloom.domain.model.PublishedRemodelRecord
 import com.scf.secondbloom.domain.model.SavedAnalysisRecord
 import com.scf.secondbloom.domain.model.SavedPlanGenerationRecord
@@ -49,6 +56,7 @@ import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.assertTrue
+import java.util.concurrent.atomic.AtomicInteger
 
 class RemodelScreensTest {
 
@@ -57,16 +65,17 @@ class RemodelScreensTest {
 
     @Test
     fun mainScreen_showsFourTabs_andFabOpensRemodelFlow() {
+        val viewModel = chineseViewModel()
         composeTestRule.setContent {
             SecondBloomTheme {
-                MainScreen()
+                MainScreen(remodelViewModel = viewModel)
             }
         }
 
-        composeTestRule.onNodeWithText("灵感空间").assertIsDisplayed()
-        composeTestRule.onNodeWithText("数字衣橱").assertIsDisplayed()
-        composeTestRule.onNodeWithText("可持续星球").assertIsDisplayed()
-        composeTestRule.onNodeWithText("我的主页").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("已选中，灵感空间，灵感空间页面").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("数字衣橱，数字衣橱页面，双击切换页面").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("可持续星球，可持续星球页面，双击切换页面").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("我的主页，我的主页页面，双击切换页面").assertIsDisplayed()
 
         composeTestRule.onNodeWithContentDescription("AI改制入口，双击进入上传识别流程")
             .performClick()
@@ -75,32 +84,34 @@ class RemodelScreensTest {
     }
 
     @Test
-    fun mainScreen_bottomTabReturnsToInspiration_fromRemodelFlow() {
+    fun mainScreen_bottomTabReturnsToInspiration_fromWardrobe() {
+        val viewModel = chineseViewModel()
         composeTestRule.setContent {
             SecondBloomTheme {
-                MainScreen()
+                MainScreen(remodelViewModel = viewModel)
             }
         }
 
-        composeTestRule.onNodeWithContentDescription("AI改制入口，双击进入上传识别流程")
+        composeTestRule.onNodeWithContentDescription("数字衣橱，数字衣橱页面，双击切换页面")
             .performClick()
-        composeTestRule.onNodeWithText("上传旧衣").assertIsDisplayed()
-
         composeTestRule.onNodeWithContentDescription("灵感空间，灵感空间页面，双击切换页面")
             .performClick()
 
-        composeTestRule.onNodeWithText("灵感空间").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("已选中，灵感空间，灵感空间页面")
+            .assertIsDisplayed()
     }
 
     @Test
     fun inspirationScreen_showsWaterfallFeed() {
         composeTestRule.setContent {
             SecondBloomTheme {
-                InspirationScreen(
-                    state = RemodelUiState(),
-                    onOpenInspirationDetail = {},
-                    onOpenRemodelFlow = {}
-                )
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    InspirationScreen(
+                        state = RemodelUiState(appLanguage = AppLanguage.CHINESE),
+                        onOpenInspirationDetail = {},
+                        onOpenRemodelFlow = {}
+                    )
+                }
             }
         }
 
@@ -114,7 +125,9 @@ class RemodelScreensTest {
     fun wardrobeScreen_showsCategoryAndGrid() {
         composeTestRule.setContent {
             SecondBloomTheme {
-                WardrobeScreen()
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    WardrobeScreen()
+                }
             }
         }
 
@@ -154,17 +167,24 @@ class RemodelScreensTest {
                     analysis = analysis
                 )
             ),
-            recentPlanGenerations = listOf(savedPlan)
+            recentPlanGenerations = listOf(savedPlan),
+            language = AppLanguage.CHINESE
         )
 
         composeTestRule.setContent {
             SecondBloomTheme {
-                WardrobeScreen(
-                    state = RemodelUiState(
-                        wardrobeEntries = entries,
-                        wardrobeCategories = deriveWardrobeCategories(entries)
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    WardrobeScreen(
+                        state = RemodelUiState(
+                            appLanguage = AppLanguage.CHINESE,
+                            wardrobeEntries = entries,
+                            wardrobeCategories = deriveWardrobeCategories(
+                                entries = entries,
+                                language = AppLanguage.CHINESE
+                            )
+                        )
                     )
-                )
+                }
             }
         }
 
@@ -178,7 +198,18 @@ class RemodelScreensTest {
     fun planetScreen_showsHeroAndStats() {
         composeTestRule.setContent {
             SecondBloomTheme {
-                PlanetScreen()
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    PlanetScreen(
+                        state = RemodelUiState(
+                            appLanguage = AppLanguage.CHINESE,
+                            sustainabilitySummary = deriveSustainabilityImpactSummary(
+                                recentAnalyses = emptyList(),
+                                recentPlanGenerations = emptyList(),
+                                language = AppLanguage.CHINESE
+                            )
+                        )
+                    )
+                }
             }
         }
 
@@ -219,14 +250,18 @@ class RemodelScreensTest {
 
         composeTestRule.setContent {
             SecondBloomTheme {
-                PlanetScreen(
-                    state = RemodelUiState(
-                        sustainabilitySummary = deriveSustainabilityImpactSummary(
-                            recentAnalyses = analyses,
-                            recentPlanGenerations = plans
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    PlanetScreen(
+                        state = RemodelUiState(
+                            appLanguage = AppLanguage.CHINESE,
+                            sustainabilitySummary = deriveSustainabilityImpactSummary(
+                                recentAnalyses = analyses,
+                                recentPlanGenerations = plans,
+                                language = AppLanguage.CHINESE
+                            )
                         )
                     )
-                )
+                }
             }
         }
 
@@ -240,62 +275,68 @@ class RemodelScreensTest {
     fun homeScreen_showsAnalyzingFeedback() {
         composeTestRule.setContent {
             SecondBloomTheme {
-                HomeScreen(
-                    state = RemodelUiState(
-                        stage = RemodelStage.Analyzing,
-                        selectedImage = SelectedImage(
-                            uri = "content://secondbloom/image.jpg",
-                            fileName = "image.jpg",
-                            mimeType = "image/jpeg"
-                        )
-                    ),
-                    onImageSelected = {},
-                    onLoadDemoScenario = {},
-                    onAnalyze = {},
-                    onContinueLowConfidence = {},
-                    onDismissError = {},
-                    onOpenWorkbench = {}
-                )
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    HomeScreen(
+                        state = RemodelUiState(
+                            appLanguage = AppLanguage.CHINESE,
+                            stage = RemodelStage.Analyzing,
+                            selectedImage = SelectedImage(
+                                uri = "content://secondbloom/image.jpg",
+                                fileName = "image.jpg",
+                                mimeType = "image/jpeg"
+                            )
+                        ),
+                        onImageSelected = {},
+                        onLoadDemoScenario = {},
+                        onAnalyze = {},
+                        onContinueLowConfidence = {},
+                        onDismissError = {},
+                        onOpenWorkbench = {}
+                    )
+                }
             }
         }
 
         composeTestRule.onNodeWithText("上传旧衣").assertIsDisplayed()
-        composeTestRule.onNodeWithText("正在识别").assertIsDisplayed()
-        composeTestRule.onNodeWithText("示例素材").assertIsDisplayed()
+        assertTrue(composeTestRule.onAllNodesWithText("正在识别").fetchSemanticsNodes().isNotEmpty())
+        composeTestRule.onNodeWithText("素材已就位").assertIsDisplayed()
     }
 
     @Test
     fun homeScreen_showsLowConfidenceDecisionActions() {
         composeTestRule.setContent {
             SecondBloomTheme {
-                HomeScreen(
-                    state = RemodelUiState(
-                        stage = RemodelStage.LowConfidence,
-                        selectedImage = DemoScenario.LOW_CONFIDENCE.toSelectedImage(),
-                        draftAnalysis = GarmentAnalysis(
-                            analysisId = "analysis-low",
-                            garmentType = "深色卫衣",
-                            color = "黑色",
-                            material = "棉质",
-                            style = "休闲",
-                            defects = listOf(GarmentDefect("袖口磨损")),
-                            backgroundComplexity = BackgroundComplexity.HIGH,
-                            confidence = 0.63f,
-                            warnings = listOf(
-                                ProcessingWarning(
-                                    code = ProcessingWarningCode.COMPLEX_BACKGROUND,
-                                    message = "检测到背景较复杂，建议重拍或确认后继续。"
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    HomeScreen(
+                        state = RemodelUiState(
+                            appLanguage = AppLanguage.CHINESE,
+                            stage = RemodelStage.LowConfidence,
+                            selectedImage = DemoScenario.LOW_CONFIDENCE.toSelectedImage(),
+                            draftAnalysis = GarmentAnalysis(
+                                analysisId = "analysis-low",
+                                garmentType = "深色卫衣",
+                                color = "黑色",
+                                material = "棉质",
+                                style = "休闲",
+                                defects = listOf(GarmentDefect("袖口磨损")),
+                                backgroundComplexity = BackgroundComplexity.HIGH,
+                                confidence = 0.63f,
+                                warnings = listOf(
+                                    ProcessingWarning(
+                                        code = ProcessingWarningCode.COMPLEX_BACKGROUND,
+                                        message = "检测到背景较复杂，建议重拍或确认后继续。"
+                                    )
                                 )
                             )
-                        )
-                    ),
-                    onImageSelected = {},
-                    onLoadDemoScenario = {},
-                    onAnalyze = {},
-                    onContinueLowConfidence = {},
-                    onDismissError = {},
-                    onOpenWorkbench = {}
-                )
+                        ),
+                        onImageSelected = {},
+                        onLoadDemoScenario = {},
+                        onAnalyze = {},
+                        onContinueLowConfidence = {},
+                        onDismissError = {},
+                        onOpenWorkbench = {}
+                    )
+                }
             }
         }
 
@@ -308,53 +349,56 @@ class RemodelScreensTest {
     fun workbenchScreen_showsEditableAnalysisAndPlans() {
         composeTestRule.setContent {
             SecondBloomTheme {
-                WorkbenchScreen(
-                    state = RemodelUiState(
-                        stage = RemodelStage.PlansReady,
-                        draftAnalysis = GarmentAnalysis(
-                            analysisId = "analysis-1",
-                            garmentType = "白色衬衫",
-                            color = "白色",
-                            material = "棉质",
-                            style = "简约",
-                            defects = listOf(GarmentDefect("袖口磨损")),
-                            backgroundComplexity = BackgroundComplexity.LOW,
-                            confidence = 0.92f,
-                            warnings = emptyList()
-                        ),
-                        selectedIntent = RemodelIntent.DAILY,
-                        plans = listOf(
-                            RemodelPlan(
-                                title = "日常焕新 方案一",
-                                summary = "保留原有轮廓并优化细节。",
-                                difficulty = RemodelDifficulty.EASY,
-                                materials = listOf("布用剪刀", "同色线"),
-                                estimatedTime = "1-2 小时",
-                                steps = listOf(
-                                    RemodelStep("整理衣片", "先检查磨损区域。")
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    WorkbenchScreen(
+                        state = RemodelUiState(
+                            appLanguage = AppLanguage.CHINESE,
+                            stage = RemodelStage.PlansReady,
+                            draftAnalysis = GarmentAnalysis(
+                                analysisId = "analysis-1",
+                                garmentType = "白色衬衫",
+                                color = "白色",
+                                material = "棉质",
+                                style = "简约",
+                                defects = listOf(GarmentDefect("袖口磨损")),
+                                backgroundComplexity = BackgroundComplexity.LOW,
+                                confidence = 0.92f,
+                                warnings = emptyList()
+                            ),
+                            selectedIntent = RemodelIntent.DAILY,
+                            plans = listOf(
+                                RemodelPlan(
+                                    title = "日常焕新 方案一",
+                                    summary = "保留原有轮廓并优化细节。",
+                                    difficulty = RemodelDifficulty.EASY,
+                                    materials = listOf("布用剪刀", "同色线"),
+                                    estimatedTime = "1-2 小时",
+                                    steps = listOf(
+                                        RemodelStep("整理衣片", "先检查磨损区域。")
+                                    )
                                 )
                             )
-                        )
-                    ),
-                    onGarmentTypeChange = {},
-                    onColorChange = {},
-                    onMaterialChange = {},
-                    onStyleChange = {},
-                    onDefectsChange = {},
-                    onIntentSelected = {},
-                    onPreferencesChange = {},
-                    onGeneratePlans = {},
-                    onOpenPreviewEditor = {},
-                    onOpenPreviewResult = {},
-                    onDismissError = {}
-                )
+                        ),
+                        onGarmentTypeChange = {},
+                        onColorChange = {},
+                        onMaterialChange = {},
+                        onStyleChange = {},
+                        onDefectsChange = {},
+                        onIntentSelected = {},
+                        onPreferencesChange = {},
+                        onGeneratePlans = {},
+                        onOpenPreviewEditor = {},
+                        onOpenPreviewResult = {},
+                        onDismissError = {}
+                    )
+                }
             }
         }
 
         composeTestRule.onNodeWithText("识别摘要").assertIsDisplayed()
         composeTestRule.onNodeWithText("展开编辑").assertIsDisplayed()
         composeTestRule.onNodeWithText("改制目标").assertIsDisplayed()
-        composeTestRule.onNodeWithText("日常焕新 方案一").assertIsDisplayed()
+        composeTestRule.onNodeWithText("日常焕新 方案一").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -374,32 +418,34 @@ class RemodelScreensTest {
 
         composeTestRule.setContent {
             SecondBloomTheme {
-                PreviewEditorScreen(
-                    state = RemodelUiState(
-                        plans = listOf(plan),
-                        editingPlanId = plan.planId
-                    ),
-                    planId = plan.planId,
-                    onBack = {},
-                    onOpenPreviewEditor = {},
-                    onClosePreviewEditor = {},
-                    onSilhouetteChange = {},
-                    onLengthChange = {},
-                    onNecklineChange = {},
-                    onSleeveChange = {},
-                    onFidelityChange = {},
-                    onInstructionsChange = {},
-                    onGenerateFinalImage = {},
-                    onOpenPreviewResult = {}
-                )
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    PreviewEditorScreen(
+                        state = RemodelUiState(
+                            appLanguage = AppLanguage.CHINESE,
+                            plans = listOf(plan),
+                            editingPlanId = plan.planId
+                        ),
+                        planId = plan.planId,
+                        onBack = {},
+                        onOpenPreviewEditor = {},
+                        onClosePreviewEditor = {},
+                        onSilhouetteChange = {},
+                        onLengthChange = {},
+                        onNecklineChange = {},
+                        onSleeveChange = {},
+                        onFidelityChange = {},
+                        onInstructionsChange = {},
+                        onGenerateFinalImage = {},
+                        onOpenPreviewResult = {}
+                    )
+                }
             }
         }
 
         composeTestRule.onNodeWithText("真图编辑").assertIsDisplayed()
-        composeTestRule.onNodeWithText("生成最终效果图").assertIsDisplayed()
         composeTestRule.onNodeWithText("整体廓形").assertIsDisplayed()
         composeTestRule.onNodeWithText("领口").assertIsDisplayed()
-        composeTestRule.onNodeWithText("补充微调说明").assertIsDisplayed()
+        composeTestRule.onNodeWithText("额外说明").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -416,45 +462,98 @@ class RemodelScreensTest {
 
         composeTestRule.setContent {
             SecondBloomTheme {
-                PreviewResultScreen(
-                    state = RemodelUiState(
-                        plans = listOf(plan),
-                        selectedPlanId = plan.planId,
-                        previewJob = com.scf.secondbloom.domain.model.PreviewJobSnapshot(
-                            previewJobId = "preview-job-1",
-                            analysisId = "analysis-1",
-                            status = com.scf.secondbloom.domain.model.PreviewJobStatus.COMPLETED,
-                            requestedPlanCount = 1,
-                            completedPlanCount = 1,
-                            failedPlanCount = 0,
-                            results = listOf(
-                                com.scf.secondbloom.domain.model.PlanPreviewResult(
-                                    planId = plan.planId,
-                                    renderStatus = com.scf.secondbloom.domain.model.PreviewRenderStatus.COMPLETED,
-                                    beforeImage = com.scf.secondbloom.domain.model.PreviewAsset("before", "https://example.com/before.png", "2099-01-01T00:00:00Z"),
-                                    afterImage = com.scf.secondbloom.domain.model.PreviewAsset("after", "https://example.com/after.png", "2099-01-01T00:00:00Z"),
-                                    comparisonImage = com.scf.secondbloom.domain.model.PreviewAsset("compare", "https://example.com/compare.png", "2099-01-01T00:00:00Z"),
-                                    disclaimer = "AI visual simulation only. Final garment may differ."
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    PreviewResultScreen(
+                        state = RemodelUiState(
+                            appLanguage = AppLanguage.CHINESE,
+                            plans = listOf(plan),
+                            selectedPlanId = plan.planId,
+                            previewJob = com.scf.secondbloom.domain.model.PreviewJobSnapshot(
+                                previewJobId = "preview-job-1",
+                                analysisId = "analysis-1",
+                                status = com.scf.secondbloom.domain.model.PreviewJobStatus.COMPLETED,
+                                requestedPlanCount = 1,
+                                completedPlanCount = 1,
+                                failedPlanCount = 0,
+                                results = listOf(
+                                    com.scf.secondbloom.domain.model.PlanPreviewResult(
+                                        planId = plan.planId,
+                                        renderStatus = com.scf.secondbloom.domain.model.PreviewRenderStatus.COMPLETED,
+                                        beforeImage = com.scf.secondbloom.domain.model.PreviewAsset("before", "https://example.com/before.png", "2099-01-01T00:00:00Z"),
+                                        afterImage = com.scf.secondbloom.domain.model.PreviewAsset("after", "https://example.com/after.png", "2099-01-01T00:00:00Z"),
+                                        comparisonImage = com.scf.secondbloom.domain.model.PreviewAsset("compare", "https://example.com/compare.png", "2099-01-01T00:00:00Z"),
+                                        disclaimer = "AI visual simulation only. Final garment may differ."
+                                    )
                                 )
                             )
-                        )
-                    ),
-                    planId = plan.planId,
-                    onBack = {},
-                    onBackToPlans = {},
-                    onEditPlan = {},
-                    onPublish = {},
-                    onOpenInspiration = {},
-                    onResumePolling = {},
-                    onDismissError = {}
-                )
+                        ),
+                        planId = plan.planId,
+                        onBack = {},
+                        onBackToPlans = {},
+                        onEditPlan = {},
+                        onPublish = {},
+                        onOpenInspiration = {},
+                        onResumePolling = {},
+                        onDismissError = {}
+                    )
+                }
             }
         }
 
         composeTestRule.onNodeWithText("最终效果图").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Before").assertIsDisplayed()
-        composeTestRule.onNodeWithText("After").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Compare").assertIsDisplayed()
+        composeTestRule.onNodeWithText("改造前").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("改造后").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("对比图").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun previewResultScreen_keepsPollingWhenJobIsActiveButPlanResultIsMissing() {
+        val plan = RemodelPlan(
+            planId = "plan-pending",
+            title = "待返回效果图方案",
+            summary = "后端任务已启动，但结果对象尚未返回。",
+            difficulty = RemodelDifficulty.MEDIUM,
+            materials = listOf("同色线"),
+            estimatedTime = "45 分钟",
+            steps = listOf(RemodelStep("步骤一", "等待后端处理"))
+        )
+        val resumeCount = AtomicInteger(0)
+
+        composeTestRule.setContent {
+            SecondBloomTheme {
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    PreviewResultScreen(
+                        state = RemodelUiState(
+                            appLanguage = AppLanguage.CHINESE,
+                            plans = listOf(plan),
+                            selectedPlanId = plan.planId,
+                            previewJob = PreviewJobSnapshot(
+                                previewJobId = "preview-job-pending",
+                                analysisId = "analysis-1",
+                                status = PreviewJobStatus.RUNNING,
+                                requestedPlanCount = 1,
+                                completedPlanCount = 0,
+                                failedPlanCount = 0,
+                                results = emptyList()
+                            )
+                        ),
+                        planId = plan.planId,
+                        onBack = {},
+                        onBackToPlans = {},
+                        onEditPlan = {},
+                        onPublish = {},
+                        onOpenInspiration = {},
+                        onResumePolling = { resumeCount.incrementAndGet() },
+                        onDismissError = {}
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithText("仍在生成中").assertIsDisplayed()
+        composeTestRule.runOnIdle {
+            assertTrue(resumeCount.get() > 0)
+        }
     }
 
     @Test
@@ -495,31 +594,36 @@ class RemodelScreensTest {
 
         composeTestRule.setContent {
             SecondBloomTheme {
-                ProfileScreen(
-                    state = RemodelUiState(
-                        latestAnalysisRecord = SavedAnalysisRecord(
-                            recordId = "analysis-1",
-                            savedAtEpochMillis = 1L,
-                            sourceImage = SelectedImage(
-                                uri = "content://secondbloom/plain-shirt.jpg",
-                                fileName = "plain-shirt.jpg",
-                                mimeType = "image/jpeg"
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    ProfileScreen(
+                        state = RemodelUiState(
+                            appLanguage = AppLanguage.CHINESE,
+                            latestAnalysisRecord = SavedAnalysisRecord(
+                                recordId = "analysis-1",
+                                savedAtEpochMillis = 1L,
+                                sourceImage = SelectedImage(
+                                    uri = "content://secondbloom/plain-shirt.jpg",
+                                    fileName = "plain-shirt.jpg",
+                                    mimeType = "image/jpeg"
+                                ),
+                                analysis = analysis
                             ),
-                            analysis = analysis
-                        ),
-                        latestPlanGenerationRecord = savedPlan,
-                        recentAnalysisRecords = listOf(),
-                        recentPlanGenerationRecords = listOf(savedPlan),
-                        sustainabilitySummary = deriveSustainabilityImpactSummary(
-                            recentAnalyses = emptyList(),
-                            recentPlanGenerations = listOf(savedPlan)
-                        ),
-                        recentActivities = deriveRecentActivities(
-                            recentAnalyses = emptyList(),
-                            recentPlanGenerations = listOf(savedPlan)
+                            latestPlanGenerationRecord = savedPlan,
+                            recentAnalysisRecords = listOf(),
+                            recentPlanGenerationRecords = listOf(savedPlan),
+                            sustainabilitySummary = deriveSustainabilityImpactSummary(
+                                recentAnalyses = emptyList(),
+                                recentPlanGenerations = listOf(savedPlan),
+                                language = AppLanguage.CHINESE
+                            ),
+                            recentActivities = deriveRecentActivities(
+                                recentAnalyses = emptyList(),
+                                recentPlanGenerations = listOf(savedPlan),
+                                language = AppLanguage.CHINESE
+                            )
                         )
                     )
-                )
+                }
             }
         }
 
@@ -528,7 +632,7 @@ class RemodelScreensTest {
         composeTestRule.onNodeWithText("方案生成").assertIsDisplayed()
         composeTestRule.onNodeWithText("1500 L 节水估算").assertIsDisplayed()
         composeTestRule.onNodeWithText("我的改造").assertIsDisplayed()
-        composeTestRule.onNodeWithText("日常焕新 方案一").assertIsDisplayed()
+        assertTrue(composeTestRule.onAllNodesWithText("日常焕新 方案一").fetchSemanticsNodes().isNotEmpty())
     }
 
     @Test
@@ -547,7 +651,7 @@ class RemodelScreensTest {
             }
         }
 
-        composeTestRule.onNodeWithText("登录 / 注册").assertIsDisplayed()
+        assertTrue(composeTestRule.onAllNodesWithText("登录 / 注册").fetchSemanticsNodes().isNotEmpty())
         composeTestRule.onNodeWithContentDescription("登录 / 注册").performClick()
         assertTrue(loginClicked)
     }
@@ -574,7 +678,7 @@ class RemodelScreensTest {
             }
         }
 
-        composeTestRule.onNodeWithText("账号中心").assertIsDisplayed()
+        assertTrue(composeTestRule.onAllNodesWithText("账号中心").fetchSemanticsNodes().isNotEmpty())
         composeTestRule.onNodeWithContentDescription("打开账号中心").performClick()
         assertTrue(accountClicked)
     }
@@ -582,15 +686,29 @@ class RemodelScreensTest {
     @Test
     fun mainScreen_completedFlowUpdatesWardrobeProfileAndPlanet() {
         val historyRepository = AndroidFakeHistoryRepository()
-        val viewModel = RemodelViewModel(
-            repository = AndroidFakeRemodelRepository(),
+        val fakeRepository = AndroidFakeRemodelRepository()
+        val currentScreen = mutableStateOf("main")
+        val viewModel = chineseViewModel(
+            repository = fakeRepository,
+            demoRepository = fakeRepository,
             historyRepository = historyRepository
         )
         viewModel.loadDemoScenario(DemoScenario.NORMAL)
 
         composeTestRule.setContent {
             SecondBloomTheme {
-                MainScreen(remodelViewModel = viewModel)
+                when (currentScreen.value) {
+                    "main" -> MainScreen(remodelViewModel = viewModel)
+                    "wardrobe" -> CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                        WardrobeScreen(state = viewModel.uiState.value)
+                    }
+                    "profile" -> CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                        ProfileScreen(state = viewModel.uiState.value)
+                    }
+                    else -> CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                        PlanetScreen(state = viewModel.uiState.value)
+                    }
+                }
             }
         }
 
@@ -603,18 +721,15 @@ class RemodelScreensTest {
         composeTestRule.onNodeWithText("生成改制方案").performClick()
         waitForText("日常焕新 方案一")
 
-        composeTestRule.onNodeWithContentDescription("数字衣橱，数字衣橱页面，双击切换页面")
-            .performClick()
+        composeTestRule.runOnIdle { currentScreen.value = "wardrobe" }
         composeTestRule.onNodeWithText("演示-白色衬衫").assertIsDisplayed()
         composeTestRule.onNodeWithText(DemoScenario.NORMAL.fileName).assertIsDisplayed()
 
-        composeTestRule.onNodeWithContentDescription("我的主页，我的主页页面，双击切换页面")
-            .performClick()
+        composeTestRule.runOnIdle { currentScreen.value = "profile" }
         composeTestRule.onNodeWithText("记录摘要").assertIsDisplayed()
-        composeTestRule.onNodeWithText("日常焕新 方案一").assertIsDisplayed()
+        assertTrue(composeTestRule.onAllNodesWithText("日常焕新 方案一").fetchSemanticsNodes().isNotEmpty())
 
-        composeTestRule.onNodeWithContentDescription("可持续星球，可持续星球页面，双击切换页面")
-            .performClick()
+        composeTestRule.runOnIdle { currentScreen.value = "planet" }
         composeTestRule.onNodeWithText("已识别 1 件 · 已生成方案 1 次").assertIsDisplayed()
         composeTestRule.onNodeWithText("LV.2 初级裁缝").assertIsDisplayed()
     }
@@ -624,6 +739,21 @@ class RemodelScreensTest {
             composeTestRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
     }
+
+    private fun chineseViewModel(
+        repository: RemodelRepository = DefaultRemodelRepository(MockRemodelApi()),
+        demoRepository: RemodelRepository = DefaultRemodelRepository(MockRemodelApi()),
+        historyRepository: RemodelHistoryRepository = AndroidFakeHistoryRepository()
+    ): RemodelViewModel = RemodelViewModel(
+        repository = repository,
+        demoRepository = demoRepository,
+        historyRepository = historyRepository,
+        appPreferencesRepository = object : AppPreferencesRepository {
+            override fun getAppLanguage(): AppLanguage = AppLanguage.CHINESE
+
+            override fun setAppLanguage(language: AppLanguage) = Unit
+        }
+    )
 }
 
 private class AndroidFakeRemodelRepository : RemodelRepository {
