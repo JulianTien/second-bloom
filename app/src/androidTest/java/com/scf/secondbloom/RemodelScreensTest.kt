@@ -557,6 +557,65 @@ class RemodelScreensTest {
     }
 
     @Test
+    fun previewResultScreen_keepsPollingWhenPlanRenderIsStillRunningAfterTimeout() {
+        val plan = RemodelPlan(
+            planId = "plan-running",
+            title = "结果仍在回填中的方案",
+            summary = "首轮轮询超时后，结果页应继续恢复后台 job。",
+            difficulty = RemodelDifficulty.MEDIUM,
+            materials = listOf("同色线"),
+            estimatedTime = "45 分钟",
+            steps = listOf(RemodelStep("步骤一", "等待 hosted preview 完成"))
+        )
+        val resumeCount = AtomicInteger(0)
+
+        composeTestRule.setContent {
+            SecondBloomTheme {
+                CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
+                    PreviewResultScreen(
+                        state = RemodelUiState(
+                            appLanguage = AppLanguage.CHINESE,
+                            plans = listOf(plan),
+                            selectedPlanId = plan.planId,
+                            isPreviewLoading = false,
+                            previewErrorMessage = "方案已确认，最终效果图仍在后台处理中。",
+                            previewJob = PreviewJobSnapshot(
+                                previewJobId = "preview-job-running",
+                                analysisId = "analysis-1",
+                                status = PreviewJobStatus.RUNNING,
+                                requestedPlanCount = 1,
+                                completedPlanCount = 0,
+                                failedPlanCount = 0,
+                                results = listOf(
+                                    PlanPreviewResult(
+                                        planId = plan.planId,
+                                        renderStatus = com.scf.secondbloom.domain.model.PreviewRenderStatus.RUNNING,
+                                        disclaimer = "AI visual simulation only. Final garment may differ."
+                                    )
+                                )
+                            )
+                        ),
+                        planId = plan.planId,
+                        onBack = {},
+                        onBackToPlans = {},
+                        onEditPlan = {},
+                        onPublish = {},
+                        onOpenInspiration = {},
+                        onResumePolling = { resumeCount.incrementAndGet() },
+                        onDismissError = {}
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithText("仍在生成中").assertIsDisplayed()
+        composeTestRule.onNodeWithText("方案已确认，最终效果图仍在后台处理中。").assertIsDisplayed()
+        composeTestRule.runOnIdle {
+            assertTrue(resumeCount.get() > 0)
+        }
+    }
+
+    @Test
     fun profileScreen_showsWorksWallFromSavedHistory() {
         val analysis = GarmentAnalysis(
             analysisId = "analysis-1",

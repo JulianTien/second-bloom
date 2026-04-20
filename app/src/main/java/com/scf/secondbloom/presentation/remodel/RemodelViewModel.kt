@@ -35,6 +35,8 @@ import com.scf.secondbloom.domain.model.PreviewEditNeckline
 import com.scf.secondbloom.domain.model.PreviewEditOptions
 import com.scf.secondbloom.domain.model.PreviewEditSilhouette
 import com.scf.secondbloom.domain.model.PreviewEditSleeve
+import com.scf.secondbloom.domain.model.PlanPreviewResult
+import com.scf.secondbloom.domain.model.PreviewJobSnapshot
 import com.scf.secondbloom.domain.model.PreviewJobStatus
 import com.scf.secondbloom.domain.model.PreviewRenderStatus
 import com.scf.secondbloom.domain.model.RemodelError
@@ -62,8 +64,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 
 private const val LowConfidenceThreshold = 0.75f
-private const val PreviewPollDelayMillis = 900L
-private const val PreviewMaxPollAttempts = 12
+private const val PreviewPollDelayMillis = 1_000L
+private const val PreviewMaxPollAttempts = 30
 private val ActivePreviewStatuses = setOf(PreviewJobStatus.QUEUED, PreviewJobStatus.RUNNING)
 private val ActivePreviewRenderStatuses = setOf(PreviewRenderStatus.QUEUED, PreviewRenderStatus.RUNNING)
 
@@ -631,6 +633,22 @@ class RemodelViewModel(
                 planId = planId,
                 editOptions = editOptions
             )
+            _uiState.update {
+                it.copy(
+                    previewJob = createPendingPreviewJobSnapshot(
+                        previewJobId = createResult.previewJobId,
+                        analysisId = analysis.analysisId,
+                        planId = planId,
+                        requestedPlanCount = createResult.requestedPlanCount,
+                        pollPath = createResult.pollPath,
+                        status = PreviewJobStatus.fromWire(createResult.status)
+                    ),
+                    selectedPlanId = planId,
+                    isPreviewLoading = true,
+                    previewErrorMessage = null,
+                    error = null
+                )
+            }
             pollPreviewJob(previewJobId = createResult.previewJobId)
         } catch (exception: IOException) {
             _uiState.update {
@@ -702,21 +720,29 @@ class RemodelViewModel(
                 }
             }
         } catch (exception: IOException) {
-            _uiState.update {
-                it.copy(
+            _uiState.update { state ->
+                state.copy(
                     isPreviewLoading = false,
-                    previewErrorMessage = exception.message.orEmpty().ifBlank {
-                        tr(it.appLanguage, "The final image status could not be refreshed. Please try again.", "当前无法刷新最终效果图状态，请稍后重试。")
+                    previewErrorMessage = if (state.previewJob?.status in ActivePreviewStatuses) {
+                        buildPreviewStillProcessingMessage(state.appLanguage)
+                    } else {
+                        exception.message.orEmpty().ifBlank {
+                            tr(state.appLanguage, "The final image status could not be refreshed. Please try again.", "当前无法刷新最终效果图状态，请稍后重试。")
+                        }
                     }
                 )
             }
             return
         } catch (exception: ModelResponseException) {
-            _uiState.update {
-                it.copy(
+            _uiState.update { state ->
+                state.copy(
                     isPreviewLoading = false,
-                    previewErrorMessage = exception.message.orEmpty().ifBlank {
-                        tr(it.appLanguage, "The server returned an invalid final image status. Please try again.", "服务端返回了异常的最终效果图状态，请稍后重试。")
+                    previewErrorMessage = if (state.previewJob?.status in ActivePreviewStatuses) {
+                        buildPreviewStillProcessingMessage(state.appLanguage)
+                    } else {
+                        exception.message.orEmpty().ifBlank {
+                            tr(state.appLanguage, "The server returned an invalid final image status. Please try again.", "服务端返回了异常的最终效果图状态，请稍后重试。")
+                        }
                     }
                 )
             }
@@ -814,6 +840,36 @@ class RemodelViewModel(
             )
         }
     }
+
+    private fun createPendingPreviewJobSnapshot(
+        previewJobId: String,
+        analysisId: String,
+        planId: String,
+        requestedPlanCount: Int,
+        pollPath: String,
+        status: PreviewJobStatus
+    ) = PreviewJobSnapshot(
+        previewJobId = previewJobId,
+        analysisId = analysisId,
+        status = status,
+        requestedPlanCount = requestedPlanCount,
+        completedPlanCount = 0,
+        failedPlanCount = 0,
+        results = listOf(
+            PlanPreviewResult(
+                planId = planId,
+                renderStatus = PreviewRenderStatus.QUEUED
+            )
+        ),
+        pollPath = pollPath
+    )
+
+    private fun buildPreviewStillProcessingMessage(language: AppLanguage): String =
+        tr(
+            language,
+            "The final image is still processing in the background.",
+            "最终效果图仍在后台处理中。"
+        )
 
     private suspend fun refreshHistory() {
         val language = _uiState.value.appLanguage

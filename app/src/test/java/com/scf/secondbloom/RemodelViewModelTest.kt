@@ -692,15 +692,21 @@ class RemodelViewModelTest {
         val pendingState = viewModel.uiState.value
         assertEquals(PreviewJobStatus.RUNNING, pendingState.previewJob?.status)
         assertEquals(PreviewRenderStatus.RUNNING, pendingState.previewFor(selectedPlanId)?.renderStatus)
+        assertEquals(selectedPlanId, pendingState.selectedPlanId)
+        assertFalse(pendingState.isPreviewLoading)
         assertTrue(
             pendingState.previewErrorMessage?.contains("still processing", ignoreCase = true) == true ||
                 pendingState.previewErrorMessage?.contains("仍在后台处理中") == true
         )
+        assertEquals(1, repository.createPreviewCalls)
+        assertEquals(30, repository.previewFetchCalls)
 
         viewModel.resumePreviewPolling(selectedPlanId)
         advanceUntilIdle()
 
         val completedState = viewModel.uiState.value
+        assertEquals(1, repository.createPreviewCalls)
+        assertEquals(31, repository.previewFetchCalls)
         assertEquals(PreviewJobStatus.COMPLETED, completedState.previewJob?.status)
         assertEquals(
             PreviewRenderStatus.COMPLETED,
@@ -853,7 +859,11 @@ private class PendingPreviewRepository : RemodelRepository {
         )
     )
 
-    private var previewFetchCalls = 0
+    var createPreviewCalls = 0
+        private set
+
+    var previewFetchCalls = 0
+        private set
 
     override suspend fun analyze(
         image: SelectedImage,
@@ -876,11 +886,13 @@ private class PendingPreviewRepository : RemodelRepository {
         status = "queued",
         requestedPlanCount = 1,
         pollPath = "/remodel-preview-jobs/preview-job-pending"
-    )
+    ).also {
+        createPreviewCalls += 1
+    }
 
     override suspend fun getPreviewJob(previewJobId: String): PreviewJobSnapshot {
         previewFetchCalls += 1
-        return if (previewFetchCalls <= 12) {
+        return if (previewFetchCalls <= 30) {
             PreviewJobSnapshot(
                 previewJobId = previewJobId,
                 analysisId = analysis.analysisId,
