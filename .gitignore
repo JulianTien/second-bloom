@@ -1,5 +1,5 @@
 *.iml
-.gradle
+.gradle/
 /local.properties
 /.idea/caches
 /.idea/libraries
@@ -16,3 +16,10 @@ local.properties
 /.kotlin
 /.PLANS.md.swp
 .omx/
+**/build/
+*.apk
+*.aab
+*.ap_
+*.jks
+*.keystore
+/.idea/

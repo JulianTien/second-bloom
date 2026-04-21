@@ -1,0 +1,9 @@
+# Android SDK path for local development.
+sdk.dir=/path/to/android/sdk
+
+# Optional: enable the real remodel backend in debug builds.
+secondBloomRemodelApiBaseUrl=https://example.invalid/
+
+# Optional: Clerk debug keys for local integration.
+secondBloomClerkPublishableKey=
+secondBloomClerkJwtTemplate=
