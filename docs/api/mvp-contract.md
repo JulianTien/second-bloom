@@ -65,9 +65,14 @@ This document is the source of truth for the first Android MVP backend.
     "confidence": 0.92,
     "warnings": []
   },
-  "userPreferences": "保留正式感"
+  "userPreferences": "保留正式感",
+  "responseLanguage": "zh"
 }
 ```
+
+- `responseLanguage` is optional and defaults to `"en"`.
+- Supported values are `"en"` and `"zh"`; `"zh-cn"` and `"zh_hans"` normalize to `"zh"`.
+- The backend must return plan-facing text in the requested language, including `title`, `summary`, `materials`, `estimatedTime`, `steps`, and `reasoningNote`.
 
 ### Success response
 

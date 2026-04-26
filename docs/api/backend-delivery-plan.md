@@ -213,6 +213,8 @@ These should be implemented explicitly rather than left to provider behavior.
 - Require non-empty `garmentType`, `color`, `material`, and `style`.
 - Allow `warnings` and `defects` to be empty arrays.
 - Allow `userPreferences` to be omitted or `null`, and normalize blank strings internally if needed.
+- Allow `responseLanguage` to be omitted and default it to `en`; normalize `zh`, `zh-cn`, and `zh_hans` to `zh`.
+- Return all plan-facing text in the normalized response language, including `title`, `summary`, `materials`, `estimatedTime`, `steps`, and `reasoningNote`.
 - Assign and persist a stable public `planId` for every returned plan before exposing it to preview jobs.
 
 ## 6. Provider Output Normalization Rules

@@ -183,7 +183,8 @@ class RealRemodelApiTest {
                 imageUri = "content://secondbloom/image.png",
                 fileName = "image.png",
                 mimeType = "image/png",
-                fileSizeBytes = 9_999
+                fileSizeBytes = 9_999,
+                responseLanguage = "zh"
             )
         )
 
@@ -191,11 +192,46 @@ class RealRemodelApiTest {
         assertTrue(requestBody.contains("name=\"fileName\"\r\n\r\ncompressed.jpg"))
         assertTrue(requestBody.contains("name=\"mimeType\"\r\n\r\nimage/jpeg"))
         assertTrue(requestBody.contains("name=\"fileSizeBytes\"\r\n\r\n1234"))
+        assertTrue(requestBody.contains("name=\"responseLanguage\"\r\n\r\nzh"))
         assertTrue(requestBody.contains("filename=\"compressed.jpg\""))
         assertTrue(requestBody.contains("prepared-image"))
     }
 
-    private fun validGeneratePlansRequest() = GenerateRemodelPlansRequestDto(
+    @Test
+    fun generatePlans_includesRequestedResponseLanguageInJsonPayload() = runTest {
+        val connection = FakeHttpURLConnection(
+            url = URL("https://secondbloom.test/generate-remodel-plans"),
+            responseCodeValue = 200,
+            successBody = """
+                {
+                  "plans": [
+                    {
+                      "planId": "plan-1",
+                      "title": "日常焕新方案",
+                      "summary": "保留原有轮廓并优化细节。",
+                      "difficulty": "easy",
+                      "materials": ["布用剪刀", "同色线"],
+                      "estimatedTime": "1-2 小时",
+                      "steps": [
+                        {"title": "整理衣片", "detail": "先熨平并标记需要保留的区域。"}
+                      ]
+                    }
+                  ]
+                }
+            """.trimIndent()
+        )
+        val api = RealRemodelApi(
+            baseUrl = "https://secondbloom.test",
+            openImageStream = { null },
+            connectionFactory = { connection }
+        )
+
+        api.generatePlans(validGeneratePlansRequest(responseLanguage = "zh"))
+
+        assertTrue(connection.requestBodyAsText().contains("\"responseLanguage\":\"zh\""))
+    }
+
+    private fun validGeneratePlansRequest(responseLanguage: String = "en") = GenerateRemodelPlansRequestDto(
         intent = "daily",
         confirmedAnalysis = GarmentAnalysisDto(
             analysisId = "analysis-1",
@@ -208,7 +244,8 @@ class RealRemodelApiTest {
             confidence = 0.92f,
             warnings = emptyList()
         ),
-        userPreferences = "保留正式感"
+        userPreferences = "保留正式感",
+        responseLanguage = responseLanguage
     )
 }
 
