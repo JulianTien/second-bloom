@@ -41,6 +41,7 @@ import com.scf.secondbloom.domain.model.SavedAnalysisRecord
 import com.scf.secondbloom.domain.model.SavedPlanGenerationRecord
 import com.scf.secondbloom.domain.model.SelectedImage
 import com.scf.secondbloom.presentation.remodel.RemodelViewModel
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -456,6 +457,55 @@ class RemodelViewModelTest {
         assertTrue(engagement?.bookmarked == true)
         assertEquals(1, syncApi.bootstrapCalls)
         assertEquals(updateCallsBeforeLogout, syncApi.updateCalls)
+    }
+
+    @Test
+    fun loginHistorySyncFailure_doesNotCrashViewModel() = runTest {
+        val authFlow = MutableStateFlow<String?>(null)
+        val viewModel = RemodelViewModel(
+            repository = DefaultRemodelRepository(MockRemodelApi()),
+            historyRepository = FakeHistoryRepository(),
+            historySyncRepositoryFactory = { userId ->
+                HistorySyncRepository(
+                    api = object : HistorySyncApi {
+                        override suspend fun getMe(accessToken: String): com.scf.secondbloom.data.historysync.UserProfileDto {
+                            error("unused")
+                        }
+
+                        override suspend fun getHistory(accessToken: String): HistoryEnvelopeDto {
+                            error("unused")
+                        }
+
+                        override suspend fun bootstrapHistory(
+                            accessToken: String,
+                            request: BootstrapHistoryRequestDto
+                        ): BootstrapHistoryResponseDto {
+                            throw IOException("The page could not be found")
+                        }
+
+                        override suspend fun updateHistory(
+                            accessToken: String,
+                            request: UpdateHistoryRequestDto
+                        ): HistoryEnvelopeDto {
+                            error("unused")
+                        }
+                    },
+                    snapshotStore = InMemorySnapshotStore(),
+                    stateStore = InMemoryStateStore(),
+                    accessTokenProvider = object : HistoryAuthTokenProvider {
+                        override suspend fun currentAccessToken(): String? = "token-$userId"
+                    },
+                    ioDispatcher = dispatcher
+                )
+            },
+            authUserIdFlow = authFlow
+        )
+
+        authFlow.value = "user-a"
+        advanceUntilIdle()
+
+        assertEquals("user-a", viewModel.activeHistorySyncUserIdForTest())
+        assertEquals(RemodelStage.Idle, viewModel.uiState.value.stage)
     }
 
     @Test

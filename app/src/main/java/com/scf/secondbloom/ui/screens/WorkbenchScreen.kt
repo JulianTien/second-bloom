@@ -55,6 +55,7 @@ import com.scf.secondbloom.domain.model.RemodelStage
 import com.scf.secondbloom.domain.model.RemodelUiState
 import com.scf.secondbloom.ui.components.SecondBloomWorkflowStep
 import com.scf.secondbloom.ui.components.SecondBloomWorkflowStrip
+import com.scf.secondbloom.ui.components.secondBloomFlowScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 import com.scf.secondbloom.ui.i18n.localizedLabel
@@ -82,6 +83,7 @@ fun WorkbenchScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
+            .secondBloomFlowScreenInsets()
             .semantics { contentDescription = localized(language, "Plan screen", "制衣方案页面") },
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)

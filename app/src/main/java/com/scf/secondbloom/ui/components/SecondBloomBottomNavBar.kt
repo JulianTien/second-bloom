@@ -71,6 +71,7 @@ fun SecondBloomBottomNavBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .secondBloomBottomNavigationInsets()
             .padding(horizontal = 16.dp, vertical = 12.dp),
         contentAlignment = Alignment.BottomCenter
     ) {

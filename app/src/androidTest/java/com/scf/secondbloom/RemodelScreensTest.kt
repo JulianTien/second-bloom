@@ -1,12 +1,16 @@
 package com.scf.secondbloom
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performClick
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import com.scf.secondbloom.data.local.AppPreferencesRepository
@@ -445,7 +449,9 @@ class RemodelScreensTest {
         composeTestRule.onNodeWithText("真图编辑").assertIsDisplayed()
         composeTestRule.onNodeWithText("整体廓形").assertIsDisplayed()
         composeTestRule.onNodeWithText("领口").assertIsDisplayed()
-        composeTestRule.onNodeWithText("额外说明").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag("preview-editor-list")
+            .performScrollToNode(hasTestTag("preview-editor-extra-notes"))
+        composeTestRule.onNodeWithTag("preview-editor-extra-notes").assertIsDisplayed()
     }
 
     @Test
@@ -756,16 +762,17 @@ class RemodelScreensTest {
 
         composeTestRule.setContent {
             SecondBloomTheme {
+                val state = viewModel.uiState.collectAsState().value
                 when (currentScreen.value) {
                     "main" -> MainScreen(remodelViewModel = viewModel)
                     "wardrobe" -> CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
-                        WardrobeScreen(state = viewModel.uiState.value)
+                        WardrobeScreen(state = state)
                     }
                     "profile" -> CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
-                        ProfileScreen(state = viewModel.uiState.value)
+                        ProfileScreen(state = state)
                     }
                     else -> CompositionLocalProvider(LocalAppLanguage provides AppLanguage.CHINESE) {
-                        PlanetScreen(state = viewModel.uiState.value)
+                        PlanetScreen(state = state)
                     }
                 }
             }

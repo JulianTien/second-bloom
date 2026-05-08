@@ -49,6 +49,7 @@ import com.scf.secondbloom.auth.SecondBloomAuthUiState
 import com.scf.secondbloom.domain.model.AppLanguage
 import com.scf.secondbloom.domain.model.RemodelUiState
 import com.scf.secondbloom.ui.components.SecondBloomAuthCard
+import com.scf.secondbloom.ui.components.secondBloomTopLevelScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 import com.scf.secondbloom.ui.i18n.localizedLabel
@@ -59,12 +60,12 @@ import com.scf.secondbloom.ui.model.ProfileWorkUiModel
 @Composable
 fun ProfileScreen(
     state: RemodelUiState,
+    modifier: Modifier = Modifier,
     authState: SecondBloomAuthUiState = SecondBloomAuthUiState.Guest,
     onLanguageSelected: (AppLanguage) -> Unit = {},
     onLoginClick: () -> Unit = {},
     onAccountClick: () -> Unit = {},
-    onLogoutClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onLogoutClick: () -> Unit = {}
 ) {
     val language = LocalAppLanguage.current
     var activeTab by rememberSaveable { mutableStateOf(ProfileTab.Works) }
@@ -76,6 +77,7 @@ fun ProfileScreen(
     LazyVerticalGrid(
         modifier = modifier
             .fillMaxSize()
+            .secondBloomTopLevelScreenInsets()
             .semantics { contentDescription = localized(language, "Profile screen", "我的主页页面") },
         columns = GridCells.Fixed(3),
         horizontalArrangement = Arrangement.spacedBy(8.dp),

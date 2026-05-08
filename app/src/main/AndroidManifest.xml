@@ -28,12 +28,9 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:scheme="clerk"
-                    android:host="${applicationId}.callback" />
-                <data
-                    android:scheme="clerk"
-                    android:host="${applicationId}.oauth" />
+                <data android:scheme="clerk" />
+                <data android:host="${applicationId}.callback" />
+                <data android:host="${applicationId}.oauth" />
             </intent-filter>
         </activity>
     </application>

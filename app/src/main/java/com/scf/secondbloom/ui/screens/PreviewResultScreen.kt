@@ -39,6 +39,7 @@ import com.scf.secondbloom.domain.model.PreviewJobStatus
 import com.scf.secondbloom.domain.model.PreviewRenderStatus
 import com.scf.secondbloom.domain.model.RemodelPlan
 import com.scf.secondbloom.domain.model.RemodelUiState
+import com.scf.secondbloom.ui.components.secondBloomFlowScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 import com.scf.secondbloom.ui.i18n.localizedLabel
@@ -81,7 +82,9 @@ fun PreviewResultScreen(
     }
 
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .secondBloomFlowScreenInsets(),
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {

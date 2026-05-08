@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.scf.secondbloom.domain.model.RemodelUiState
+import com.scf.secondbloom.ui.components.secondBloomTopLevelScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 import com.scf.secondbloom.ui.model.PlanetStatKind
@@ -46,9 +47,9 @@ import java.text.NumberFormat
 
 @Composable
 fun PlanetScreen(
+    modifier: Modifier = Modifier,
     state: RemodelUiState = RemodelUiState(),
-    onOpenRemodelFlow: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onOpenRemodelFlow: () -> Unit = {}
 ) {
     val language = LocalAppLanguage.current
     val summary = state.sustainabilitySummary
@@ -72,6 +73,7 @@ fun PlanetScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
+            .secondBloomTopLevelScreenInsets()
             .semantics { contentDescription = localized(language, "Planet screen", "可持续星球页面") },
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 120.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp),

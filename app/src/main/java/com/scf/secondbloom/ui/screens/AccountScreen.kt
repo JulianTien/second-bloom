@@ -1,6 +1,7 @@
 package com.scf.secondbloom.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.clerk.ui.userprofile.UserProfileView
 import com.scf.secondbloom.auth.SecondBloomAuthUiState
+import com.scf.secondbloom.ui.components.secondBloomFlowScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 
@@ -26,36 +28,47 @@ fun AccountScreen(
     val language = LocalAppLanguage.current
 
     if (authState is SecondBloomAuthUiState.SignedIn) {
-        UserProfileView(onDismiss = onDismiss)
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .secondBloomFlowScreenInsets()
+        ) {
+            UserProfileView(onDismiss = onDismiss)
+        }
         return
     }
 
-    Card(
+    Box(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            .fillMaxSize()
+            .secondBloomFlowScreenInsets()
+            .padding(24.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            Text(
-                text = localized(language, "No account is active yet.", "当前还没有登录账号。"),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = localized(
-                    language,
-                    "Sign in first to manage your profile, sessions, and connected accounts.",
-                    "请先登录，再管理账号资料、会话和关联登录方式。"
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = localized(language, "No account is active yet.", "当前还没有登录账号。"),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = localized(
+                        language,
+                        "Sign in first to manage your profile, sessions, and connected accounts.",
+                        "请先登录，再管理账号资料、会话和关联登录方式。"
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

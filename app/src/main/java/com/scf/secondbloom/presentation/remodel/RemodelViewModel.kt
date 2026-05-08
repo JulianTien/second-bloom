@@ -52,6 +52,7 @@ import com.scf.secondbloom.domain.model.deriveWardrobeCategories
 import com.scf.secondbloom.domain.model.deriveWardrobeEntries
 import java.io.IOException
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -990,7 +991,14 @@ class RemodelViewModel(
         }
 
         val job = viewModelScope.launch {
-            block()
+            try {
+                block()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Exception) {
+                // Cloud history sync is an account enhancement. Network, auth, or backend
+                // failures must not crash the guest-first remodel flow.
+            }
         }
         activeHistorySyncJob = job
         job.invokeOnCompletion {

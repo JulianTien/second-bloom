@@ -52,10 +52,12 @@ import com.scf.secondbloom.domain.model.RemodelUiState
 import com.scf.secondbloom.domain.model.SelectedImage
 import com.scf.secondbloom.ui.components.SecondBloomWorkflowStep
 import com.scf.secondbloom.ui.components.SecondBloomWorkflowStrip
+import com.scf.secondbloom.ui.components.secondBloomFlowScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 import com.scf.secondbloom.ui.i18n.localizedExpectedOutcome
 import com.scf.secondbloom.ui.i18n.localizedTitle
+import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -84,6 +86,7 @@ fun HomeScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
+            .secondBloomFlowScreenInsets()
             .background(MaterialTheme.colorScheme.background)
             .semantics {
                 contentDescription = localized(language, "Upload and analyze screen", "上传识别页面")
@@ -649,8 +652,8 @@ private fun formatFileSize(sizeBytes: Long?): String {
     if (sizeBytes == null) return "大小未知"
     val sizeInKb = sizeBytes / 1024f
     return if (sizeInKb < 1024) {
-        String.format("%.0f KB", sizeInKb)
+        String.format(Locale.US, "%.0f KB", sizeInKb)
     } else {
-        String.format("%.1f MB", sizeInKb / 1024f)
+        String.format(Locale.US, "%.1f MB", sizeInKb / 1024f)
     }
 }

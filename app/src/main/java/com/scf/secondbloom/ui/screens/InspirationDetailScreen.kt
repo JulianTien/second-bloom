@@ -45,9 +45,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.scf.secondbloom.domain.model.RemodelUiState
+import com.scf.secondbloom.ui.components.secondBloomFlowScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 import com.scf.secondbloom.ui.model.InspirationCardUiModel
+import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -69,7 +71,9 @@ fun InspirationDetailScreen(
     BackHandler(onBack = onBack)
 
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .secondBloomFlowScreenInsets(),
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -363,6 +367,6 @@ private fun InspirationDetailImage(
 
 private fun formatCount(count: Int): String =
     when {
-        count >= 1000 -> String.format("%.1fk", count / 1000f)
+        count >= 1000 -> String.format(Locale.US, "%.1fk", count / 1000f)
         else -> count.toString()
     }

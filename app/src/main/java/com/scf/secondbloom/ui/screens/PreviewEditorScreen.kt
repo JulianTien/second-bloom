@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -47,6 +48,7 @@ import com.scf.secondbloom.domain.model.PreviewEditSilhouette
 import com.scf.secondbloom.domain.model.PreviewEditSleeve
 import com.scf.secondbloom.domain.model.RemodelPlan
 import com.scf.secondbloom.domain.model.RemodelUiState
+import com.scf.secondbloom.ui.components.secondBloomFlowScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 import com.scf.secondbloom.ui.i18n.localizedLabel
@@ -86,7 +88,10 @@ fun PreviewEditorScreen(
     BackHandler(onBack = ::closePage)
 
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .testTag("preview-editor-list")
+            .fillMaxSize()
+            .secondBloomFlowScreenInsets(),
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -205,7 +210,8 @@ fun PreviewEditorScreen(
         item {
             PreviewEditorCard(
                 title = localized(language, "Extra notes", "额外说明"),
-                description = localized(language, "Add one or two details you want to preserve or emphasize.", "可以补充一两句想保留或想强调的细节。")
+                description = localized(language, "Add one or two details you want to preserve or emphasize.", "可以补充一两句想保留或想强调的细节。"),
+                modifier = Modifier.testTag("preview-editor-extra-notes")
             ) {
                 OutlinedTextField(
                     value = state.previewEditOptions.extraInstructions,
@@ -385,9 +391,11 @@ private fun <T> PreviewOptionGroup(
 private fun PreviewEditorCard(
     title: String,
     description: String,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Card(
+        modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface

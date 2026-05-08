@@ -43,18 +43,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.scf.secondbloom.domain.model.RemodelUiState
+import com.scf.secondbloom.ui.components.secondBloomTopLevelScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 import com.scf.secondbloom.ui.model.InspirationCardUiModel
 import com.scf.secondbloom.ui.model.SecondBloomShowcaseContent
+import java.util.Locale
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InspirationScreen(
+    modifier: Modifier = Modifier,
     state: RemodelUiState = RemodelUiState(),
     onOpenInspirationDetail: (String) -> Unit,
-    onOpenRemodelFlow: () -> Unit,
-    modifier: Modifier = Modifier
+    onOpenRemodelFlow: () -> Unit
 ) {
     val language = LocalAppLanguage.current
     val inspirationCards = SecondBloomShowcaseContent.allInspirationCards(
@@ -65,6 +67,7 @@ fun InspirationScreen(
     LazyVerticalStaggeredGrid(
         modifier = modifier
             .fillMaxSize()
+            .secondBloomTopLevelScreenInsets()
             .semantics {
                 contentDescription = localized(language, "Inspiration screen", "灵感空间页面")
             },
@@ -259,7 +262,7 @@ private fun InspirationCard(
 
 private fun formatCount(count: Int): String =
     when {
-        count >= 1000 -> String.format("%.1fk", count / 1000f)
+        count >= 1000 -> String.format(Locale.US, "%.1fk", count / 1000f)
         else -> count.toString()
     }
 

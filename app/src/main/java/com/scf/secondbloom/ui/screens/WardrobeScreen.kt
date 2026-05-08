@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.scf.secondbloom.domain.model.RemodelUiState
 import com.scf.secondbloom.domain.model.WardrobeEntryUiModel
+import com.scf.secondbloom.ui.components.secondBloomTopLevelScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 import com.scf.secondbloom.ui.model.SecondBloomShowcaseContent
@@ -49,10 +50,10 @@ import com.scf.secondbloom.ui.model.WardrobeItemUiModel
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WardrobeScreen(
+    modifier: Modifier = Modifier,
     state: RemodelUiState = RemodelUiState(),
     onOpenRemodelFlow: () -> Unit = {},
-    onOpenSavedPlan: (String) -> Unit = {},
-    modifier: Modifier = Modifier
+    onOpenSavedPlan: (String) -> Unit = {}
 ) {
     val language = LocalAppLanguage.current
     val showLiveHistory = state.wardrobeEntries.isNotEmpty()
@@ -73,6 +74,7 @@ fun WardrobeScreen(
     LazyVerticalGrid(
         modifier = modifier
             .fillMaxSize()
+            .secondBloomTopLevelScreenInsets()
             .semantics { contentDescription = localized(language, "Wardrobe screen", "数字衣橱页面") },
         columns = GridCells.Fixed(2),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
