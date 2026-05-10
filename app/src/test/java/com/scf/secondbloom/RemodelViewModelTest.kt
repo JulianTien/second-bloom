@@ -122,6 +122,34 @@ class RemodelViewModelTest {
     }
 
     @Test
+    fun analyzeSelectedImage_hidesLowLevelNetworkDetails_fromUserFacingError() = runTest {
+        val viewModel = RemodelViewModel(
+            repository = CountingRemodelRepository(
+                analyzeFailure = IOException(
+                    "unexpected end of stream on com.android.okhttp.Address@ac08f6b4"
+                )
+            )
+        )
+
+        viewModel.setAppLanguage(AppLanguage.CHINESE)
+        viewModel.onImageSelected(
+            SelectedImage(
+                uri = "content://secondbloom/plain-shirt.jpg",
+                fileName = "plain-shirt.jpg",
+                mimeType = "image/jpeg",
+                sizeBytes = 180_000
+            )
+        )
+        viewModel.analyzeSelectedImage()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(RemodelStage.NetworkError, state.stage)
+        assertEquals("网络连接已中断，请检查模拟器或设备的网络/代理后重试。", state.error?.message)
+        assertFalse(state.error?.message.orEmpty().contains("okhttp", ignoreCase = true))
+    }
+
+    @Test
     fun analyzeSelectedImage_usesDemoRepository_forNormalDemoScenario() = runTest {
         val primaryRepository = CountingRemodelRepository(
             analyzeFailure = IllegalStateException("No content provider: demo://scenario/normal")

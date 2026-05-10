@@ -353,7 +353,7 @@ Returns the snapshot envelope with the next `revision`.
 - Implementation-ready backend rollout guidance lives in `docs/api/backend-delivery-plan.md`.
 - The first relational schema draft lives in `docs/api/postgres-schema-draft.sql`.
 - Public error responses should include at least a top-level `message` field.
-- Visual preview uses an async job model and currently returns signed-style asset URLs from `GET /remodel-preview-jobs/{previewJobId}`.
+- Visual preview uses an async job model and returns app-served asset URLs from `GET /remodel-preview-jobs/{previewJobId}`. Persisted Blob objects are fetched through `/preview-assets/{assetId}` so mobile clients do not need direct access to the Blob host.
 - Android fallback remains `MockRemodelApi` until `REMODEL_USE_REAL_API=true` and `REMODEL_API_BASE_URL` is configured.
 - Debug builds can opt into the real backend by setting `secondBloomRemodelApiBaseUrl` in Gradle properties or `local.properties`; when the value is blank, the app stays in mock mode.
 - Debug builds can opt into Clerk-backed account features by setting `secondBloomClerkPublishableKey` and `secondBloomClerkJwtTemplate` in Gradle properties or `local.properties`.

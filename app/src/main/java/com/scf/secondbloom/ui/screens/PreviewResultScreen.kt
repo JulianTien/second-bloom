@@ -33,16 +33,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.scf.secondbloom.domain.model.PlanPreviewResult
 import com.scf.secondbloom.domain.model.PreviewJobStatus
 import com.scf.secondbloom.domain.model.PreviewRenderStatus
 import com.scf.secondbloom.domain.model.RemodelPlan
 import com.scf.secondbloom.domain.model.RemodelUiState
+import com.scf.secondbloom.ui.components.RemotePreviewImage
 import com.scf.secondbloom.ui.components.secondBloomFlowScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 import com.scf.secondbloom.ui.i18n.localizedLabel
+import com.scf.secondbloom.ui.preview.displayUrl
 
 @Composable
 fun PreviewResultScreen(
@@ -316,22 +317,22 @@ private fun PreviewGalleryCard(preview: PlanPreviewResult) {
         title = localized(language, "Final image ready", "最终效果图已生成"),
         description = localized(language, "Compare the before-and-after result here.", "你可以在这里集中对比改造前后效果。")
     ) {
-        preview.beforeImage?.url?.let {
+        preview.beforeImage?.let { asset ->
             PreviewResultImageCard(
                 title = localized(language, "Before", "改造前"),
-                imageUrl = it
+                imageUrl = asset.displayUrl()
             )
         }
-        preview.afterImage?.url?.let {
+        preview.afterImage?.let { asset ->
             PreviewResultImageCard(
                 title = localized(language, "After", "改造后"),
-                imageUrl = it
+                imageUrl = asset.displayUrl()
             )
         }
-        preview.comparisonImage?.url?.let {
+        preview.comparisonImage?.let { asset ->
             PreviewResultImageCard(
                 title = localized(language, "Compare", "对比图"),
-                imageUrl = it
+                imageUrl = asset.displayUrl()
             )
         }
         Text(
@@ -379,8 +380,8 @@ private fun PreviewResultImageCard(
                     )
                 }
             } else {
-                AsyncImage(
-                    model = imageUrl,
+                RemotePreviewImage(
+                    imageUrl = imageUrl,
                     contentDescription = title,
                     modifier = Modifier
                         .fillMaxWidth()

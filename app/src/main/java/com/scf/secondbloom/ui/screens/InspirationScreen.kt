@@ -41,13 +41,14 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import com.scf.secondbloom.ui.components.RemotePreviewImage
 import com.scf.secondbloom.domain.model.RemodelUiState
 import com.scf.secondbloom.ui.components.secondBloomTopLevelScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 import com.scf.secondbloom.ui.model.InspirationCardUiModel
 import com.scf.secondbloom.ui.model.SecondBloomShowcaseContent
+import com.scf.secondbloom.ui.preview.previewAssetDisplayUrl
 import java.util.Locale
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -149,13 +150,13 @@ private fun InspirationCard(
                 InspirationImagePanel(
                     modifier = Modifier.weight(1f),
                     label = "Before",
-                    imageUrl = item.beforeImageUrl,
+                    imageUrl = previewAssetDisplayUrl(item.beforeImageAssetId, item.beforeImageUrl),
                     fallbackColor = item.beforeColor
                 )
                 InspirationImagePanel(
                     modifier = Modifier.weight(1f),
                     label = "After",
-                    imageUrl = item.afterImageUrl,
+                    imageUrl = previewAssetDisplayUrl(item.afterImageAssetId, item.afterImageUrl),
                     fallbackColor = item.afterColor
                 )
             }
@@ -294,8 +295,8 @@ private fun InspirationImagePanel(
                 .background(fallbackColor),
             contentAlignment = Alignment.TopStart
         ) {
-            AsyncImage(
-                model = imageUrl,
+            RemotePreviewImage(
+                imageUrl = imageUrl,
                 contentDescription = label,
                 modifier = Modifier.fillMaxSize()
             )

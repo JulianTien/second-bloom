@@ -43,12 +43,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.scf.secondbloom.domain.model.RemodelUiState
+import com.scf.secondbloom.ui.components.RemotePreviewImage
 import com.scf.secondbloom.ui.components.secondBloomFlowScreenInsets
 import com.scf.secondbloom.ui.i18n.LocalAppLanguage
 import com.scf.secondbloom.ui.i18n.localized
 import com.scf.secondbloom.ui.model.InspirationCardUiModel
+import com.scf.secondbloom.ui.preview.previewAssetDisplayUrl
 import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -155,8 +156,16 @@ fun InspirationDetailScreen(
                 title = localized(language, "Before / After", "改造前后"),
                 description = localized(language, "Scroll through the original look and the makeover result together.", "把原始衣物与改造结果放在一起查看。")
             ) {
-                InspirationDetailImage(label = localized(language, "Before", "改造前"), imageUrl = item.beforeImageUrl, fallbackColor = item.beforeColor)
-                InspirationDetailImage(label = localized(language, "After", "改造后"), imageUrl = item.afterImageUrl, fallbackColor = item.afterColor)
+                InspirationDetailImage(
+                    label = localized(language, "Before", "改造前"),
+                    imageUrl = previewAssetDisplayUrl(item.beforeImageAssetId, item.beforeImageUrl),
+                    fallbackColor = item.beforeColor
+                )
+                InspirationDetailImage(
+                    label = localized(language, "After", "改造后"),
+                    imageUrl = previewAssetDisplayUrl(item.afterImageAssetId, item.afterImageUrl),
+                    fallbackColor = item.afterColor
+                )
             }
         }
 
@@ -353,8 +362,8 @@ private fun InspirationDetailImage(
                     )
                 }
             } else {
-                AsyncImage(
-                    model = imageUrl,
+                RemotePreviewImage(
+                    imageUrl = imageUrl,
                     contentDescription = label,
                     modifier = Modifier
                         .fillMaxWidth()

@@ -206,7 +206,10 @@ class RemodelViewModel(
             } catch (exception: IOException) {
                 setError(
                     stage = RemodelStage.NetworkError,
-                    error = RemodelError(RemodelErrorType.NETWORK_ERROR, exception.message.orEmpty())
+                    error = RemodelError(
+                        RemodelErrorType.NETWORK_ERROR,
+                        networkErrorMessage(_uiState.value.appLanguage, exception)
+                    )
                 )
             } catch (exception: ModelResponseException) {
                 setError(
@@ -351,7 +354,10 @@ class RemodelViewModel(
             } catch (exception: IOException) {
                 setError(
                     stage = RemodelStage.NetworkError,
-                    error = RemodelError(RemodelErrorType.NETWORK_ERROR, exception.message.orEmpty())
+                    error = RemodelError(
+                        RemodelErrorType.NETWORK_ERROR,
+                        networkErrorMessage(_uiState.value.appLanguage, exception)
+                    )
                 )
             } catch (exception: ModelResponseException) {
                 setError(
@@ -655,9 +661,7 @@ class RemodelViewModel(
             _uiState.update {
                 it.copy(
                     isPreviewLoading = false,
-                    previewErrorMessage = exception.message.orEmpty().ifBlank {
-                        tr(it.appLanguage, "The plan is confirmed, but the final image request failed.", "方案已确认，但最终效果图请求失败。")
-                    }
+                    previewErrorMessage = networkErrorMessage(it.appLanguage, exception)
                 )
             }
         } catch (exception: InvalidImageException) {
@@ -727,9 +731,7 @@ class RemodelViewModel(
                     previewErrorMessage = if (state.previewJob?.status in ActivePreviewStatuses) {
                         buildPreviewStillProcessingMessage(state.appLanguage)
                     } else {
-                        exception.message.orEmpty().ifBlank {
-                            tr(state.appLanguage, "The final image status could not be refreshed. Please try again.", "当前无法刷新最终效果图状态，请稍后重试。")
-                        }
+                        networkErrorMessage(state.appLanguage, exception)
                     }
                 )
             }
@@ -1028,6 +1030,32 @@ class RemodelViewModel(
 
     private fun tr(language: AppLanguage, english: String, chinese: String): String =
         if (language == AppLanguage.ENGLISH) english else chinese
+
+    private fun networkErrorMessage(language: AppLanguage, exception: IOException): String {
+        val rawMessage = exception.message.orEmpty().trim()
+        if (rawMessage.isBlank() || isLowLevelNetworkMessage(rawMessage)) {
+            return tr(
+                language,
+                "The network connection was interrupted. Check the emulator or device network/proxy and try again.",
+                "网络连接已中断，请检查模拟器或设备的网络/代理后重试。"
+            )
+        }
+        return rawMessage
+    }
+
+    private fun isLowLevelNetworkMessage(message: String): Boolean {
+        val normalized = message.lowercase()
+        return normalized.contains("unexpected end of stream") ||
+            normalized.contains("connection closed") ||
+            normalized.contains("connection reset") ||
+            normalized.contains("failed to connect") ||
+            normalized.contains("unable to resolve host") ||
+            normalized.contains("sslhandshake") ||
+            normalized.contains("broken pipe") ||
+            normalized.contains("recv failure") ||
+            normalized.contains("timed out") ||
+            normalized.contains("timeout")
+    }
 
     private fun setError(stage: RemodelStage, error: RemodelError) {
         _uiState.update {
